@@ -495,6 +495,21 @@ REPORT_SECTION
     report << (elem_prod(selectivity_mat(i),mat_n_size_pred(i)))/mat_numbers_pred(i)<<endl;
   }
 
+  report <<"$obs_imm_n_size" << endl;
+  for(int i=styr; i<=endyr; i++)
+  {
+
+    report << imm_n_size_obs(i)<<endl;
+  }
+  
+  report <<"$obs_mat_n_size" << endl;
+  for(int i=styr; i<=endyr; i++)
+  {
+    report << mat_n_size_obs(i)<<endl;
+  }
+
+
+
   report<<"$styr"<<endl;
   report<<styr<<endl;
   report<<"$endyr"<<endl;
@@ -612,7 +627,19 @@ REPORT_SECTION
     report << (use_term_molt(i))<<endl;
   }
  	 
-   
+  report <<"$sizes" << endl;
+  report << sizes << endl;	
+  
+  report <<"$imm_cv" << endl;
+  report << sigma_numbers_imm << endl;	
+  
+  report <<"$mat_cv" << endl;
+  report << sigma_numbers_mat << endl;	
+ 
+  report <<"$ret_cat_yrs" << endl;
+  report << ret_cat_yrs << endl;	 
+  
+  
     save_gradients(gradients);
   
 RUNTIME_SECTION

@@ -27,6 +27,7 @@ DATA_SECTION
   init_number smooth_f_weight
   init_number surv_sel_cv
   init_number smooth_surv_weight
+  init_number smooth_init_weight
   init_number est_molt
  
    !!cout<<"n_obs"<<n_obs<<endl; 
@@ -70,13 +71,13 @@ PARAMETER_SECTION
   init_bounded_dev_vector nat_m_dev(styr,endyr,-4,4,est_m_devs)
   init_bounded_vector q_dev(styr,endyr,-0.2,0.2,est_q_devs)
   init_bounded_number log_avg_rec(1,40)
-  init_bounded_dev_vector rec_devs(styr,endyr,-10,10,1)
+  init_bounded_dev_vector rec_devs(styr,endyr,-12,12,1)
   init_bounded_number sigma_m(0.01,4,est_sigma_m)
   init_bounded_number log_m_mu(-5,3,est_log_m_mu)
   init_bounded_vector prop_rec(1,2,0.00001,200)
   init_bounded_vector sigma_q(1,2,0.01,4,est_sigma_q)
   
-  init_bounded_number log_f(-5,5)
+  init_bounded_number log_f(-10,5)
   init_bounded_dev_vector f_dev(1,ret_cat_yr_n,-5,5)
   init_bounded_number fish_ret_sel_50(25,150,-1)
   init_bounded_number fish_ret_sel_slope(0.0001,20,-1)
@@ -129,6 +130,7 @@ PARAMETER_SECTION
   number smooth_f_like
   number surv_sel_prior
   number smooth_surv_like
+    number smooth_init_like
   number f_prior
   
   vector temp_prop_rec(1,3)
@@ -251,7 +253,7 @@ FUNCTION evaluate_the_objective_function
   surv_sc_like = 0;
   for (int year=styr;year<=endyr;year++)
    for (int size=1;size<=size_n;size++)
-    if (n_size_obs(year,size) >0.001 & n_size_pred(year,size) >0.001)
+    if (n_size_obs(year,size) >0.01 & n_size_pred(year,size) >0.01)
      surv_sc_like += sc_eff_samp*(n_size_obs(year,size)/sum_numbers_obs(year)) * log( (selectivity(year,size)*n_size_pred(year,size)/numbers_pred(year)) / (n_size_obs(year,size)/sum_numbers_obs(year)));
   surv_sc_like = -1*surv_sc_like;
   
@@ -260,7 +262,7 @@ FUNCTION evaluate_the_objective_function
   ret_comp_like = 0;
   for (int year=1;year<=ret_sc_yr_n;year++)
    for (int size=1;size<=size_n;size++)
-    if (ret_cat_size(year,size) >0.001 & pred_retained_size_comp(ret_sc_yrs(year),size) >0.001)
+    if (ret_cat_size(year,size) >0.01 & pred_retained_size_comp(ret_sc_yrs(year),size) >0.01)
      ret_comp_like += ret_eff_samp*(ret_cat_size(year,size)) * log( (pred_retained_size_comp(ret_sc_yrs(year),size)/pred_retained_n(ret_sc_yrs(year))) / (ret_cat_size(year,size)));
   ret_comp_like = -1*ret_comp_like;
 
@@ -307,15 +309,18 @@ FUNCTION evaluate_the_objective_function
   
   smooth_surv_like = 0;
   smooth_surv_like = smooth_surv_weight* (norm2(first_difference(first_difference(surv_sel))));
+  
+  smooth_init_like = 0;
+  smooth_init_like = smooth_init_weight* (norm2(first_difference(first_difference(log_n_init))));
 
   f = num_like +  ret_cat_like + tot_cat_like + surv_sc_like + ret_comp_like + tot_comp_like + 
   nat_m_like +  nat_m_mu_like +  smooth_q_like + smooth_m_like + q_like +  smooth_f_like +
-  surv_sel_prior + smooth_surv_like + f_prior;
+  surv_sel_prior + smooth_surv_like + f_prior + smooth_init_like;
   
   cout<<num_like<< " "  << surv_sc_like << " " <<endl;
   cout<<ret_cat_like<< " " << ret_cat_like << " " << ret_comp_like << " " << tot_comp_like << " " <<endl;
   cout<<nat_m_like<< " " << tot_cat_like << " " << nat_m_mu_like << " "  <<endl;
-  cout<<smooth_q_like<< " " << smooth_m_like << " " << q_like << " "  <<smooth_f_like<<" " << surv_sel_prior<<" "<<f_prior<<" "<<endl;
+  cout<<smooth_q_like<< " " << smooth_m_like << " " << q_like << " "  <<smooth_f_like<<" " << surv_sel_prior<<" "<<f_prior<<" "<<smooth_init_like<<" "<<endl;
   
 // ========================y==================================================   
 REPORT_SECTION

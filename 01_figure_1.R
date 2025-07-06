@@ -183,9 +183,144 @@ val_out<-ggplot(cat_val)+
   scale_y_continuous(position = "right")+
   scale_fill_manual(values=c("#ff5050","#3da550","#ff8f38"))
 
+annotation_custom2 <-   function (grob, xmin = -Inf, xmax = Inf, ymin = -Inf,ymax = Inf, data){ layer(data = data, stat = StatIdentity, position = PositionIdentity,geom = ggplot2:::GeomCustomAnn,inherit.aes = TRUE,params = list(grob = grob,xmin = xmin, xmax = xmax,ymin = ymin, ymax = ymax))}
+library(png)
+library(grid)
+in_png_opie<-readPNG('data/snow.png')
+unique(c(in_png_opie[,,1]))
+print(p)
+map_1 <- p+  annotation_custom2(rasterGrob(in_png_opie, interpolate=TRUE), 
+                                         xmin=-175, xmax=-170, ymin=56, ymax=60,data=in_dat[1:nrow(in_dat),])
 
 
 
 png("plots/fig_1.png",height=8,width=12,res=400,units='in')
 print(p)+(catch_out/val_out)
 dev.off()
+
+#============================================
+#==calculate temperature occupied + mean size
+#============================================
+#==temperature occupied opilio
+use_df_op<-filter(opilio,SEX==1&HAUL_TYPE==3&nchar(GIS_STATION)<5)
+occ_temp_op<-use_df_op%>%
+  group_by(AKFIN_SURVEY_YEAR,GIS_STATION)%>%
+  summarize(cpue=sum(SAMPLING_FACTOR)/median(AREA_SWEPT),
+            gear_temp=mean(GEAR_TEMPERATURE,na.rm=T),
+            avg_size=weighted.mean(WIDTH,w=SAMPLING_FACTOR,na.rm=T))
+
+op_occ_temp_yr<-occ_temp_op%>%
+  group_by(AKFIN_SURVEY_YEAR)%>%
+  summarize(Temperature=weighted.mean(gear_temp, w = cpue, na.rm = T),
+            avg_size=weighted.mean(avg_size,w=cpue,na.rm=T))
+colnames(op_occ_temp_yr)<-c("Year","Temperature","Size")
+op_occ_temp_yr$stock<-"Snow"
+
+#==temperature occupied tanner
+use_df_tn<-filter(tanner,SEX==1&HAUL_TYPE==3&nchar(GIS_STATION)<5)
+occ_temp_tn<-use_df_tn%>%
+  group_by(AKFIN_SURVEY_YEAR,GIS_STATION)%>%
+  summarize(cpue=sum(SAMPLING_FACTOR)/median(AREA_SWEPT),
+            gear_temp=mean(GEAR_TEMPERATURE,na.rm=T),
+            avg_size=weighted.mean(WIDTH,w=SAMPLING_FACTOR,na.rm=T))
+
+tn_occ_temp_yr<-occ_temp_tn%>%
+  group_by(AKFIN_SURVEY_YEAR)%>%
+  summarize(weighted.mean(gear_temp, w = cpue, na.rm = T),
+            avg_size=weighted.mean(avg_size,w=cpue,na.rm=T))
+plot(tn_occ_temp_yr)
+colnames(tn_occ_temp_yr)<-c("Year","Temperature","Size")
+tn_occ_temp_yr$stock<-"Tanner"
+
+#==W of 168 for prib dist, S of 58.39 lat
+#==bbrkc
+use_df_bbrkc<-filter(bbrkc,SEX==1 & MID_LONGITUDE>-168)
+occ_temp_bbrkc<-use_df_bbrkc%>%
+  group_by(AKFIN_SURVEY_YEAR,GIS_STATION)%>%
+  summarize(cpue=sum(SAMPLING_FACTOR)/median(AREA_SWEPT),
+            gear_temp=mean(GEAR_TEMPERATURE,na.rm=T),
+            avg_size=weighted.mean(LENGTH,w=SAMPLING_FACTOR,na.rm=T))
+
+bbrkc_occ_temp_yr<-occ_temp_bbrkc%>%
+  group_by(AKFIN_SURVEY_YEAR)%>%
+  summarize(weighted.mean(gear_temp, w = cpue, na.rm = T),
+            avg_size=weighted.mean(avg_size,w=cpue,na.rm=T))
+colnames(bbrkc_occ_temp_yr)<-c("Year","Temperature","Size")
+bbrkc_occ_temp_yr$stock<-"BBRKC"
+plot(bbrkc_occ_temp_yr)
+
+#==pirck
+use_df_pirkc<-filter(bbrkc,SEX==1 & MID_LONGITUDE< -168)
+occ_temp_pirkc<-use_df_pirkc%>%
+  group_by(AKFIN_SURVEY_YEAR,GIS_STATION)%>%
+  summarize(cpue=sum(SAMPLING_FACTOR)/median(AREA_SWEPT),
+            gear_temp=mean(GEAR_TEMPERATURE,na.rm=T),
+            avg_size=weighted.mean(LENGTH,w=SAMPLING_FACTOR,na.rm=T))
+
+pirkc_occ_temp_yr<-occ_temp_pirkc%>%
+  group_by(AKFIN_SURVEY_YEAR)%>%
+  summarize(weighted.mean(gear_temp, w = cpue, na.rm = T),
+            avg_size=weighted.mean(avg_size,w=cpue,na.rm=T))
+plot(pirkc_occ_temp_yr)
+colnames(pirkc_occ_temp_yr)<-c("Year","Temperature","Size")
+pirkc_occ_temp_yr$stock<-"PIRKC"
+
+#==smbkc
+use_df_smbkc<-filter(bkc,SEX==1 & MID_LATITUDE>58.39)
+occ_temp_smbkc<-use_df_smbkc%>%
+  group_by(AKFIN_SURVEY_YEAR,GIS_STATION)%>%
+  summarize(cpue=sum(SAMPLING_FACTOR)/median(AREA_SWEPT),
+            gear_temp=mean(GEAR_TEMPERATURE,na.rm=T),
+            avg_size=weighted.mean(LENGTH,w=SAMPLING_FACTOR,na.rm=T))
+
+smbkc_occ_temp_yr<-occ_temp_smbkc%>%
+  group_by(AKFIN_SURVEY_YEAR)%>%
+  summarize(weighted.mean(gear_temp, w = cpue, na.rm = T),
+            avg_size=weighted.mean(avg_size,w=cpue,na.rm=T))
+plot(smbkc_occ_temp_yr)
+colnames(smbkc_occ_temp_yr)<-c("Year","Temperature","Size")
+smbkc_occ_temp_yr$stock<-"SMBKC"
+
+#==pibkc
+use_df_pibkc<-filter(bkc,SEX==1 & MID_LATITUDE< 58.39)
+occ_temp_pibkc<-use_df_pibkc%>%
+  group_by(AKFIN_SURVEY_YEAR,GIS_STATION)%>%
+  summarize(cpue=sum(SAMPLING_FACTOR)/median(AREA_SWEPT),
+            gear_temp=mean(GEAR_TEMPERATURE,na.rm=T),
+            avg_size=weighted.mean(LENGTH,w=SAMPLING_FACTOR,na.rm=T))
+
+pibkc_occ_temp_yr<-occ_temp_pibkc%>%
+  group_by(AKFIN_SURVEY_YEAR)%>%
+  summarize(weighted.mean(gear_temp, w = cpue, na.rm = T),
+            avg_size=weighted.mean(avg_size,w=cpue,na.rm=T))
+plot(pibkc_occ_temp_yr)
+colnames(pibkc_occ_temp_yr)<-c("Year","Temperature","Size")
+pibkc_occ_temp_yr$stock<-"PIBKC"
+
+plotters<-rbind(op_occ_temp_yr,tn_occ_temp_yr,bbrkc_occ_temp_yr,
+      pirkc_occ_temp_yr,smbkc_occ_temp_yr,pibkc_occ_temp_yr)
+
+png("plots/temp_occupied.png",height=6,width=8,res=400,units='in')
+ggplot(plotters)+
+  geom_line(aes(x=Year,y=Temperature,col=stock),lwd=2)+
+  scale_color_manual(values=c("#ff5050","#0034c377","#ff505077","#0034c3","#3da550","#ff8f38"))+
+  theme_bw()
+dev.off()
+
+png("plots/avg_size.png",height=6,width=8,res=400,units='in')
+ggplot(plotters)+
+  geom_line(aes(x=Year,y=Size,col=stock),lwd=2)+
+  scale_color_manual(values=c("#ff5050","#0034c377","#ff505077","#0034c3","#3da550","#ff8f38"))+
+  theme_bw()
+dev.off()
+
+write.csv(plotters,"data/alt_metrics_calc.csv")
+
+
+temp_mu<-plotters%>%
+  group_by(Year)%>%
+  summarize(mean_tmp=mean(Temperature))
+
+ggplot(temp_mu)+
+  geom_line(aes(x=Year,y=mean_tmp))+
+  theme_bw()

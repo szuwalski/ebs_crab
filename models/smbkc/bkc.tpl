@@ -78,11 +78,11 @@ PARAMETER_SECTION
   
   init_bounded_number log_f(-5,5)
   init_bounded_dev_vector f_dev(1,ret_cat_yr_n,-5,5)
-  init_bounded_number fish_ret_sel_50(25,150)
+  init_bounded_number fish_ret_sel_50(25,170)
   init_bounded_number fish_ret_sel_slope(0.0001,20)
-  init_bounded_number fish_tot_sel_50(25,150)
+  init_bounded_number fish_tot_sel_50(25,170)
   init_bounded_number fish_tot_sel_slope(0.0001,20) 
-  init_bounded_number surv_sel_50(25,150)
+  init_bounded_number surv_sel_50(25,170)
   init_bounded_number surv_sel_slope(0.0001,20) 
   
   init_bounded_number molt_sel_50(25,150)

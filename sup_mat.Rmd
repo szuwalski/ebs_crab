@@ -1,0 +1,691 @@
+---
+author: ""
+date:
+output:
+  pdf_document:
+header-includes: 
+  - \usepackage[left]{lineno}
+  - \linenumbers
+  - \usepackage{float} \floatplacement{figure}{H} 
+  - \newcommand{\beginsupplement}{\setcounter{table}{0} \renewcommand{\thetable}{S\arabic{table}} \setcounter{figure}{0} \renewcommand{\thefigure}{S\arabic{figure}}}
+
+#-  \pagenumbering{gobble}
+csl: fish-and-fisheries.csl
+toc: yes
+title: "Supplementary information for 'Episodic mortality drives Bering Sea crab populations'"
+---
+
+```{r, include=FALSE}
+
+knitr::opts_chunk$set(echo=FALSE,message=FALSE,warning=FALSE)
+
+library(plyr)
+library(dplyr)
+library(knitr)
+library(ggplot2)
+library(PBSmodelling)
+library(pander)
+library(coda)
+library(maps)
+library(lattice)
+library(PBSmapping)
+library(mapdata)    #some additional hires data
+library(maptools)   #useful tools such as reading shapefiles
+library(mapproj)
+library(plotrix)
+
+library(ggridges)
+library(reshape2)
+library(miceadds)
+
+
+```
+
+\beginsupplement
+
+\newpage
+
+# Supplementary materials
+## Methods overview
+We used an integrated population dynamics model to estimate variation in mortality (partitioned into 'other' and 'fishing') and recruitment over time for six crab populations in the eastern Bering Sea.  The population dynamics models were fit to abundance and size composition data for male crab from the National Marine Fisheries Service (NMFS) summer bottom trawl survey on the eastern Bering Sea shelf. The model was also fit to retained and discarded catch from the directed fishery when available. We then used generalized additive models (GAMs) to relate the estimated variation in 'other' mortality to population metrics and temperature occupied.  
+
+These supplementary materials are incomplete and will be finished at a later date. In spite of their unfinished state, they were included here to facilitate discussion about the manuscript, particularly about the model framework.
+
+## Assessment data 
+### NMFS Bottom trawl survey
+
+The eastern Bering Sea trawl survey has been conducted annually since the mid-1970s although no survey was conducted during 2020 due to the COVID-19 pandemic (Zacher et al. 2023). During the first decade of the survey there was a gradual expansion of the survey area leading to variability in both the number of stations sampled, and survey extent, primarily in the northwest of the survey grid (i.e. in the vicinity of St. Matthew Island). The survey extent was standardized in 1988, and 376 stations have been consistently sampled since. A 0.5-hr tow is made near the center of each 20 x 20 nmi (37 x 37 km) square on a sampling grid. Since 1982, the standardized sampling gear has been the 83-112 eastern otter trawl (Zacher et al. 2023). Prior to 2006 all carapace width and chela height measurements (used to assess male maturity) were measured to 1 mm. During the period 2006-2015 the majority were measured were measured to 1 mm, and a subsample specifically for chela height measurements were measured to 0.1 mm using Vernier calipers. Beginning in 2016 all crab have been measured to 0.1 mm using digital calipers. Individual crab are measured to the nearest 2 g using a digital scale. In cases where subsampling is required due to catch size, crab are divided into kept and discarded categories and weighed to the nearest 10 g. The ratio of kept/discarded is then used to calculate a sampling factor by which the sampled catch may later be expanded.
+
+Male crab maturity was determined using the procedure outlined in Richar and Foy (2022). Briefly, paired, log-transformed, carapace width and chela height data are divided into a series of intervals along the log-carapace width (x) axis, within the log-carapace width range over which two overlapping data clouds occur. Data from each interval are used to calculate a distribution, and the minima of the region separating the 2 dominant peaks is obtained. The set of midpoints for each log-carapace width interval is then combined with the set of extracted minimas to create an (x,y) data set. A linear model is then run using these points as inputs, and the calculated regression line is the final maturity cutline.
+
+Temperature occupied for each stock was calculated from the measured bottom temperature from each tow, weighted by the CPUE for a given species at that tow (figure SX). Average size was calculated as a weighted mean of the vector of size, with weights given as the abundance of crab in a given size bin estimated from the fitted population dynamics models (figure SX).
+
+### Directed fisheries data
+
+Fisheries catches are reported by Alaska Department of Fish and Game (ADFG) statistical area in logbooks and were aggregated by year to be used as input in this analysis. The fishery generally starts at the end of October and closes at the beginning of May, and most of the catches occur during a short period in winter. Catch of retained crab from the directed snow crab pot fishery from survey year 1982 to the 2021 were used in this analysis and are based on dockside landings. The fishery was closed in 2022 and 2023 due to low abundances. Information on discarded crab are collected via on-board observers who measure, count, and weigh samples of crab brought aboard fishing vessels. More information on the fisheries data collection process can be seen in the individual stock assessments (Szuwalski, 2023; Palof et al., 2023; Sterns, et al., 2023; Stockhausen 2023).
+
+## Population dynamics model
+### Size-structured population
+The population dynamics model presented here incorporates the best available information on relevant population processes. The model tracks numbers of male crab at size (s) (and maturity state (m) for Chionoecetes) over time ($N_{t,s,m}$) with 5 mm size bins over different ranges of sizes for each population (\autoref{}).  Other mortality (M) is estimated by year (y) (and maturity state (m) for Chionoecetes); fully-selected fishing mortality (F) is estimated by year (y). Other estimated parameters include the initial numbers at size by maturity state, an average recruitment, yearly recruitment deviations, a vector of scalars that determine the proportions of estimated recruitment split into the first three size bins, fishery selectivity, and survey selectivity (see \autoref{} for a list of what parameters are estimated for each stock. Parameters determining growth and maturity are estimated outside of the model based on available data from stock assessments. The timing of the fishery is different for each population and is denoted by the month in which it occurs (q below). Mortality is the only population process that occurs during the first several months of a given year (the crab year begins in July with the bottom trawl survey):
+
+ \begin{equation} N_{t=y+q/12,s,m} = N_{t=y,s,m}e^{-(\frac{q}{12})M_{t,s,m})}
+  \end{equation}
+  
+Fishing occurs as a pulse fishery in which the crab captured and brought on deck of fishing vessels ($C_{cap}$) are a function of capture selectivity ($S_{cap}$), the number of crab in the Bering Sea at the time of fishing, and the fishing mortality applied ($F_{t}$). A retention ogive ($S_{ret}$) is applied to the captured crab to determine what fraction of crab at a given size are retained for sale ($C_{ret}$) and what fraction are discarded back into the ocean ($C_{disc}$). A discard mortality ($d_{mort}$) of 25% is applied to the crab returned to the ocean. 
+
+ \begin{equation}  C_{cap,y} = n_{t=y+q/12,s,m}(1-e^{-F_{t}*S_{cap}})  \end{equation}
+ \begin{equation}  C_{ret,y} = C_{cap,y}*S_{ret} \end{equation}
+ \begin{equation}  n_{t=y+q/12,s,m} = n_{t=y+q/12,s,m}e^{-F_{t}*S_{cap}} + n_{t=y+q/12,s,m} + (1-d_{mort}) C_{cap,y} (1-S_{ret})   \end{equation}
+ 
+Capture selectivity and retention selectivity are logistic functions of size in which the slope and size at which 50% selectivity are estimated (two time-invariant parameters for each ogive). 
+  
+   \begin{equation}  S_{cap,s} = \frac{1}{1+exp(-S_{slope,cap}(size(s)-S_{50,cap}))}  \end{equation}
+   \begin{equation}  S_{ret,s} = \frac{1}{1+exp(-S_{slope,ret}(size(s)-S_{50,ret}))}  \end{equation}  
+   
+Growth occurs after fishing and is represented in the model by multiplying the vector of immature crab at size by a size-transition matrix $X_{s,s'}$ that defines the size to which crab grow given an initial size. this process results in two temporary vectors of numbesr at siez for Chionoecetes species where immature crab are denoted by the subscript m=1 and mature by m=2. 
+
+
+ \begin{equation}  n_{t=y+q/12,s,m=immature} = z_{s}(1-\rho_{y,s}) X_{s,s'} n_{t=y+q/12,s,m=1}   \end{equation}
+ \begin{equation}  n_{t=y+q/12,s,m=mature} = z_{s}\rho_{y,s} X_{s,s'} n_{t=y+q/12,s,m=1} + (1-z_{s})n_{t=y+q/12,s,m=2}     \end{equation}
+ 
+A single equation can describe king crab speices given the lack of a terminal molt: 
+
+\begin{equation}  n_{t=y+q/12,s} = (1-z_{s}) X_{s,s'} n_{t=y+q/12,s} + z_{s} X_{s,s'} n_{t=y+q/12,s}   \end{equation}
+
+The size transition matrices $X_{w,w'}$ used here were constructed using growth increment or tagging data collected over several years (see assessments for a summary) to estimate a linear relationship between pre- and post-molt carapace width, ($\hat{W}^{pre}_{w}$ and $\hat{W}^{post}_{w}$, respectively) and the variability around that relationship was characterized by a discretized and renormalized normal distribution, Y~*w,w'*~, where *w* and *w'* represent entries in the rows and columns of the matrix.
+
+ \begin{equation} X_{w,w'} = \frac{Y_{w,w'}}{ \sum_{w'} Y_{w,w'}}\end{equation}
+
+ \begin{equation} Y_{w,w'} = (\bar{W}_{w'} + 2.5 - W_{w})^{\frac {\hat{W_{w}}-(\bar{W}_{w}-2.5)}{ \beta}} \end{equation}
+
+ \begin{equation}
+  \hat{W}^{post}_{w} = \alpha_ + \beta_{1}\hat{W}^{pre}_{w}
+ \end{equation}
+
+Where $\alpha$, $\beta$, and $\beta_{1}$ are parameters estimated outside of the population dynamics model. 
+
+The probability of maturing ($\rho$) and molting probability (z) are handled differently for king crab vs. Chionoecetes species. Chionoecetes species have a terminal molt to maturity, after which they do not grow again (Tamone et al. 1995). The probability of maturing is based on the observed ogives of the proportion of mature new shell males by size calculated from chelae height measured in the NMFS survey data (Richar and Foy, 2022). These observed probabilities of having undergone terminal molt are input as data in the model. All immature individuals of Chionoecetes species are assumed to molt (i.e. z = 1). King crab do not have a molt to maturity, but the probability of molting varies with size. Here, a declining logistic function was estimated for each king crab species within the model:
+
+   \begin{equation}  z_{s} =1 - \frac{1}{1+exp(-m_{s}(size(s)-m_{50}))}  \end{equation}  
+
+
+Where the size at 50% molting probability is *m_{50}* and the slope of the logistic function is *m_{s}*. Recruitment by year was estimated as a vector of deviations ($\tau_{y}$) around a mean ($\mu$) in log space and added to the first three size of classes of crab based on another vector that is determined by the estimated parameters $\delta_{s}$ with bounds 0-200 and determines the proportion allocated to each size bin $\psi_{s}$.
+
+ \begin{equation} tot_d = 20 + \delta_{1} + \delta_{2} \end{equation}
+ \begin{equation} \psi_{1} = \frac{20}{tot_d} \end{equation}
+ \begin{equation} \psi_{2,3} = \frac{\delta_{d}}{tot_d} \end{equation}
+ \begin{equation}  n_{(t=y+q/12,s=1-3,m=1)} = n_{(t=y+q/12,s=1-3,m=1)} + \psi_{s} e^{\mu+\tau_{y}}    \end{equation}
+
+Finally, the remaining other mortality is applied to the population after growth, molting, recruitment, and fishing occurs. Note that this allows a crab to experience two different mortalities within a given year as it undergoes terminal molt. 
+
+ \begin{equation} N_{t=y+1,s,m=1} = n_{t=y+q/12,s,m=1}e^{-\frac{12-q}{12}M_{t,s,m}}  \end{equation}
+ \begin{equation} N_{t=y+1,s,m=2} = n_{t=y+q/12,s,m=2}e^{-\frac{12-q}{12}M_{t,s,m}}  \end{equation}
+
+### Survey selectivity priors
+
+The observed numbers of crab at size by year in the NMFS survey reflect the ability of the trawl gear to capture the crab, also known as 'selectivity'. The selectivity of trawl gear can change according to size, and consequently needs to be accounted for in the population dynamics model when fitting to the survey data. Survey selectivity was estimated for snow crab and Tanner crab by fitting the model while accounting for priors based on the inferred selectivity from experimental *Nephrops* trawls (a small trawl net designed to maintain bottom contact), operated by the Bering Sea Fisheries Research Foundation in collaboration with the NMFS summer survey. The experimental trawls were performed at the same time and location as the NMFS summer survey tows to evaluate the efficiency of the NMFS survey trawl gear at capturing snow crab (Somerton et al., 2013). The *Nephrops* gear used by the BSFRF was assumed to capture all crab in its path given strong bottom contact.  The resulting area-swept estimates of numbers of crab at size from the BSFRF and NMFS surveys ($\hat{N}_{y,s,NMFS}$ and $\hat{N}_{y,s,NMFS}$, respectively) can be used to generate priors for the selectivity of the NMFS gear in year y ($S_{y,NMFS}$) as:
+
+ \begin{equation} S_{y,NMFS} = \frac{\hat{N}_{y,s,NMFS}}{\hat{N}_{y,s,BSFRF}} \end{equation}
+
+The experimental trawls captured snow crab in the years 2010, 2011, 2016, 2017, and 2018, but the spatial foot print and sample sizes varied by year. The calculated selectivities by size and by year were fairly consistent for snow crab of carapace widths 40 - 95 mm, but the signal was less consistent for crab larger than ~100 mm carapace width given the more sparse nature of the data in those size ranges. 
+
+Survey selectivity for snow crab and Tanner crab is estimated based on a functional form that allows for a stair-stepped pattern in survey selectivity like that suggested by the BSFRF data. Five parameters are estimated: two that determine separate logistic curves ($\alpha$ and $\beta$ parameters) and one that determines where the stair-step occurs with respect to size ($\omega$). 
+
+ \begin{equation} \hat{S}_{NMFS} = \frac{\omega}{(1+exp(-\alpha_{1}(size-\beta_{1})))} + \frac{1-\omega}{ (1+exp(-\alpha_{2}(size-\beta_{2})))} \end{equation}
+
+Estimated selectivity for the survey fit these prior data reasonably given the uncertainty assigned to the data source. All king crab stocks have an estimated logistic survey selectivity with no priors imposed.
+
+### Objective function
+The objective function for the population dynamics model consists of likelihood components (representing the fit of the model to the data) and penalty components (which incorporate constraints in the fitting based on auxiliary information) that are summed and minimized in log space to estimate parameters within the model. Several data sources were fit to using the following likelihoods. Observed size composition data crab caught in the survey and retained and discarded crab in the fishery were fit using multinomial likelihoods and were implemented in the form:
+
+\begin{equation} L_{x} = \lambda_{x} \sum_{y} N_{x,y} \sum_{l} p^{obs}_{x,y,l} ln( \hat {p}_{x,y,l}/p^{obs}_{x,y,l})
+\end{equation}
+
+Where *L~*x*~* was the likelihood associated with data component x, $\lambda_{x}$ represented an optional additional weighting factor for the likelihood, $N_{x,y}$ was the sample sizes for the likelihood, $p^{obs}_{x,y,l}$ was the observed proportion in size bin *l* during year *y* for data component *x*, and $\hat {p}_{x,y,l}$ was the predicted proportion in size bin *l* during year *y* for data component *x*. Sample sizes were input as 40 to balance the contributions of the size composition data and the indices.
+
+Observed indices of abundance in the survey and retained and discarded catches (in numbers) in the fishery were fit with log normal likelihoods implemented in the form:
+
+\begin{equation} L_{x} = \lambda_{x} \sum_{y} \frac {(ln(\hat{I}_{x,y}) - ln(I_{x,y}))^2}{2 \sqrt{ln(1+CV_{x,y}^2)}}
+\end{equation}
+
+*$L_{x}$* was the contribution to the objective function of data component *x*, $\lambda_{x}$ was any additional weighting applied to the component, *$\hat{I}_{x,y}$* was the predicted value of quantity *I* from data component *x* during year *y*, I~*x,y*~ was the observed value of quantity *I* from data component *x* during year *y* and CV~*x,y*~ was the coefficient of variation for data component *x* during year *y*. See data files in the github repo for values.  
+
+### Penalties and priors
+
+Smoothing penalties were placed on estimated vectors of deviations for other mortality using normal likelihoods on the second differences of the vectors. Normal priors were also placed on the mean value of other mortality (see \autoref{}) and the deviation of the estimated mortality from that mean. Prior values for the average other mortality based are generally based on assumed maximum ages and Hamel's (2015) empirical analysis of life history correlates with mortality. The normal priors were of the form: 
+
+\begin{equation} P_{x} = \lambda_{x} \sum_{y} \frac {((\hat{I}_{x,y}) - (I_{x,y}))^2}{sqrt{2\sigma_{x,y}^2}}
+\end{equation}
+
+$P_{x}$ was the contribution to the objective function of the penalty associated with model estimate *x*, $\lambda_{x}$ was any additional weighting applied to the component, $\hat{I}_{x,y}$ was the predicted value of population process *I* relevant to penalty *x* during year *y*, I~*x,y*~ was the prior value of process *I* relevant to penalty *x* during year *y* and $\sigma_{x,y}$ was the input sigma for penalty *x* during year *y*. See data files in the github repo for values.  
+
+### Fits and diagnostics
+These models were fit using AD Model Builder (ADMB; Fournier et al., 2012). Variances associated with estimated time series of mortality were fixed at relatively large values to allow the model flexibility to capture changes in observed abundance (see data files in github repository for values used). Points to discuss: desired diagnostic performance, simulation testing, and model complexity.
+
+#### Snow crab
+
+\autoref{surv_ind_o}
+\autoref{fish_ind_o}
+\autoref{fit_imm_surv_o}
+\autoref{fit_mat_surv_o}
+\autoref{fit_ret_o}
+\autoref{fit_disc_o}
+\autoref{snow_est}
+
+#### Tanner crab
+
+\autoref{surv_ind_t}
+\autoref{fish_ind_t}
+\autoref{fit_imm_surv_t}
+\autoref{fit_mat_surv_t}
+\autoref{fit_ret_t}
+\autoref{fit_disc_t}
+\autoref{tan_est}
+
+#### Bristol Bay red king crab
+
+\autoref{surv_ind_b}
+\autoref{fish_ind_b}
+\autoref{fit_surv_b}
+\autoref{fit_ret_b}
+\autoref{fit_tot_b}
+\autoref{bbrkc_est}
+
+#### Saint Matthews blue king crab
+
+\autoref{surv_ind_sm}
+\autoref{fish_ind_sm}
+\autoref{fit_surv_sm}
+\autoref{fit_ret_sm}
+\autoref{fit_tot_sm}
+\autoref{smbkc_est}
+
+#### Pribilof Islands red king crab
+
+\autoref{surv_ind_pir}
+\autoref{fish_ind_pir}
+\autoref{fit_surv_pir}
+\autoref{pirkc_est}
+
+#### Pribilof Islands blue king crab
+
+\autoref{surv_ind_pib}
+\autoref{fish_ind_pib}
+\autoref{fit_surv_pib}
+\autoref{pibkc_est}
+
+
+
+
+The models presented here can be sensitive to small changes in weighting of data components. Changing the weights to size composition data in the survey, for example, can result in a model that produces nearly identical parameter estimates and derived quantities, but does not produce an invertible Hessian (which is a criteria of convergence). It is not clear if this sensitivity is a function of the model structure or ADMB's optimization algorithms.
+
+
+## Generalized additive models
+### Structure
+Generalized additive models (GAMs) were used in the R programming language (package *mgcv*; Wood, 2011) to relate changes in estimated other mortality by maturity state, $m_{m,y}$, and recruitment $r_{y}$ to a vector including environmental covariates and mature population density, $\phi_{y}$. GAMs were also fit to observed maturity data using relevant covariates to explain variability over time. GAMs are useful for our purposes because of their flexibility in fitting potential non-linear relationships, given we do not have an a priori expectation of the functional form between responses and covariates. 
+
+\begin{equation} m_{m,y} = s(\phi_{m,y}) + \epsilon_{i} \end{equation}
+
+where 's()' is a smoothing function based on thin-plate splines, $\phi$ is a matrix of environmental covariates (each of which have a separate smooth estimated), and $\epsilon$ is unexplained error.  Models were compared via Akaike's Information Criterion (AIC; Akaike; 1974).  The specified families used as link functions when fitting the GAMs were a Tweedie distribution. The number of knots allowed per smooth was constrained to 4 to minimize overfitting and facilitate biological interpretation. Model diagnostics were performed by simulating residuals using the R package 'DHARMa' which is useful when using link functions other than Gaussian. 
+
+### Fits and diagnostics
+
+AIC, DHARMa, crossvalidation to come.
+
+
+
+
+
+\newpage
+
+```{r,echo=FALSE,warning=FALSE,message=F}
+
+stock<-c("Snow","Tanner","BBRKC","PIRKC","SMBKC","PIBKC")
+size_rng<-c("30-135","25-185","45-170","45-220","45-170","45-200")
+om_prior<-c(0.27,0.27,0.18,.18,.18,.18)
+maturity<-c("Chela-based","Chela-based",">120 mm",">120 mm",">105 mm",">120 mm")
+yr_rng<-c("1982-2023","1975-2023","1975-2023","1976-2023","1978-2023","1975-2023")
+fish_time<-c("Feb","Feb",rep("Sep",4))
+col_nm<-c("Population","Sizes","M prior","Maturity","Years","Fish time")
+
+
+plot_tab<-cbind(stock,size_rng,om_prior,maturity,yr_rng,fish_time)
+colnames(plot_tab)<-col_nm
+kable(plot_tab,justify=c("left",rep("center",5)),caption="\\label{specs}Specifications for models by population. ")
+
+```
+
+\newpage
+
+```{r,echo=FALSE,warning=FALSE,message=F}
+# in_dat<-as.data.frame(read.csv("data/keep_AIC.csv"))
+# plot_tab<-reshape2::acast(in_dat,covariate~process)
+# plot_tab[,1:4]<-round(as.numeric(plot_tab[,1:4]),2)
+# plot_tab[is.na(plot_tab)]<-""
+# kable(plot_tab,justify=c("left",rep("center",5)),caption="\\label{est_pars}Estimated processes by population. ")
+
+```
+
+\newpage
+
+```{r,echo=FALSE,warning=FALSE,message=F}
+# in_dat<-as.data.frame(read.csv("data/keep_AIC.csv"))
+# plot_tab<-reshape2::acast(in_dat,covariate~process)
+# plot_tab[,1:4]<-round(as.numeric(plot_tab[,1:4]),2)
+# plot_tab[is.na(plot_tab)]<-""
+# kable(plot_tab,justify=c("left",rep("center",5)),caption="\\label{AIC}AIC by model by process (columns) and covariates (rows). Each entry in the table represents a GAM used to explain variance in the process denoted by the column header that incorporates the row label as the covariate. ")
+
+```
+
+\newpage
+
+
+```{r, echo=FALSE,warning=FALSE,message=F,out.width="100%",fig.cap="\\label{rkc_cor}Correlations between estimated population processes for king crab species. The letter after a stock name (A,F,O,R,S) represent Total abundance, Fishing mortality, Other mortality, Recruitment, and Spawning abundance, respectively." }
+
+include_graphics("plots/rkc_cors.png")
+
+```
+
+
+\newpage
+
+```{r, echo=FALSE,warning=FALSE,message=F,out.width="100%",fig.cap="\\label{chio_cor}Correlations between estimated population processes for Chionoecetes crab species. "}
+
+include_graphics("plots/chion_cors.png")
+
+```
+
+
+\newpage
+
+
+```{r, echo=FALSE,warning=FALSE,message=F,out.width="100%",fig.cap="\\label{rkc_over}Comparison of model fits and estimated recruitment, other mortality, and fishing mortality for king crab species."}
+
+include_graphics("plots/fig_2.png")
+
+```
+
+
+\newpage
+
+
+```{r, echo=FALSE,warning=FALSE,message=F,out.width="100%",fig.cap="\\label{chio_over}Comparison of model fits and estimated recruitment, other mortality, and fishing mortality for Chionoecetes crab species."}
+
+include_graphics("plots/fig_3.png")
+
+```
+
+
+\newpage
+
+```{r, echo=FALSE,warning=FALSE,message=F,out.width="100%",fig.cap="\\label{temp_occ}Temperature occupied in degrees celcius by population."}
+
+include_graphics("plots/temp_occupied.png")
+
+```
+
+
+\newpage
+
+```{r, echo=FALSE,warning=FALSE,message=F,out.width="100%",fig.cap="\\label{avg_size} Average modeled size by population."}
+
+include_graphics("plots/avg_size.png")
+
+```
+
+
+\newpage
+
+
+
+```{r, echo=FALSE,warning=FALSE,message=F,out.width="100%",fig.cap="\\label{surv_ind_o}Fits to the survey indices of abundance and size composition data for snow crab."}
+
+include_graphics("plots/Snowind_fits.png")
+
+```
+
+\newpage
+
+
+```{r, echo=FALSE,warning=FALSE,message=F,out.width="100%",fig.cap="\\label{fish_ind_o}Fits to the retained and discarded abundances in the directed snow crab fishery."}
+
+include_graphics("plots/Snowcatch_fits.png")
+
+```
+
+\newpage
+
+
+```{r, echo=FALSE,warning=FALSE,message=F,out.width="100%",fig.cap="\\label{fit_imm_surv_o}Model fits to individual years of size composition data for immature male snow crab captured in the survey."}
+
+include_graphics("plots/Snowimm_size_comp_all.png")
+
+```
+
+\newpage
+
+```{r, echo=FALSE,warning=FALSE,message=F,out.width="100%",fig.cap="\\label{fit_mat_surv_o}Model fits to individual years of size composition data for mature male snow crab captured in the survey."}
+
+include_graphics("plots/Snowmat_size_comp_all.png")
+
+```
+
+\newpage
+
+```{r, echo=FALSE,warning=FALSE,message=F,out.width="100%",fig.cap="\\label{fit_ret_o}Model fits to individual years of size composition data for retained snowcrab in the directed fishery."}
+
+include_graphics("plots/Snowret_size_all.png")
+
+```
+
+\newpage
+
+```{r, echo=FALSE,warning=FALSE,message=F,out.width="100%",fig.cap="\\label{fit_disc_o}Model fits to individual years of size composition data for discarded snow crab in the directed fishery."}
+
+include_graphics("plots/Snowdisc_size_all.png")
+
+```
+
+
+\newpage
+
+```{r, echo=FALSE,warning=FALSE,message=F,out.width="100%",fig.cap="\\label{snow_est}Estimates of population processes for snow crab."}
+
+include_graphics("plots/Snowmodel_growth.png")
+
+```
+
+\newpage
+
+```{r, echo=FALSE,warning=FALSE,message=F,out.width="100%",fig.cap="\\label{surv_ind_t}Fits to the survey indices of abundance and size composition data for Tanner crab."}
+
+include_graphics("plots/Tannerind_fits.png")
+
+```
+
+\newpage
+
+
+```{r, echo=FALSE,warning=FALSE,message=F,out.width="100%",fig.cap="\\label{fish_ind_t}Fits to the retained and discarded abundances in the directed Tanner crab fishery."}
+
+include_graphics("plots/Tannercatch_fits.png")
+
+```
+
+\newpage
+
+
+```{r, echo=FALSE,warning=FALSE,message=F,out.width="100%",fig.cap="\\label{fit_imm_surv_t}Model fits to individual years of size composition data for immature male Tanner crab captured in the survey."}
+
+include_graphics("plots/Tannerimm_size_comp_all.png")
+
+```
+
+\newpage
+
+```{r, echo=FALSE,warning=FALSE,message=F,out.width="100%",fig.cap="\\label{fit_mat_surv_t}Model fits to individual years of size composition data for mature male Tanner crab captured in the survey."}
+
+include_graphics("plots/Tannermat_size_comp_all.png")
+
+```
+
+\newpage
+
+```{r, echo=FALSE,warning=FALSE,message=F,out.width="100%",fig.cap="\\label{fit_ret_t}Model fits to individual years of size composition data for retained Tanner crab in the directed fishery."}
+
+include_graphics("plots/Tannerret_size_all.png")
+
+```
+
+\newpage
+
+```{r, echo=FALSE,warning=FALSE,message=F,out.width="100%",fig.cap="\\label{fit_disc_t}Model fits to individual years of size composition data for discarded Tanner crab in the directed fishery."}
+
+include_graphics("plots/Tannerdisc_size_all.png")
+
+```
+
+\newpage
+
+```{r, echo=FALSE,warning=FALSE,message=F,out.width="100%",fig.cap="\\label{tan_est}Estimates of population processes for Tanner crab."}
+
+include_graphics("plots/Tannermodel_growth.png")
+
+```
+
+\newpage
+
+```{r, echo=FALSE,warning=FALSE,message=F,out.width="100%",fig.cap="\\label{surv_ind_b}Fits to the survey indices of abundance and size composition data for Bristol Bay red king crab."}
+
+include_graphics("plots/BBRKCind_fits.png")
+
+```
+
+\newpage
+
+
+```{r, echo=FALSE,warning=FALSE,message=F,out.width="100%",fig.cap="\\label{fish_ind_b}Fits to the retained and discarded abundances in the directed Bristol Bay red king crab fishery."}
+
+include_graphics("plots/BBRKCcatch_fits.png")
+
+```
+
+\newpage
+
+
+```{r, echo=FALSE,warning=FALSE,message=F,out.width="100%",fig.cap="\\label{fit_surv_b}Model fits to individual years of size composition data for male Bristol Bay red king crab captured in the survey."}
+
+include_graphics("plots/BBRKCn_size_comp_all.png")
+
+```
+
+\newpage
+
+
+```{r, echo=FALSE,warning=FALSE,message=F,out.width="100%",fig.cap="\\label{fit_ret_b}Model fits to individual years of size composition data for retained Bristol Bay red king crab in the directed fishery."}
+
+include_graphics("plots/BBRKCret_size_all.png")
+
+```
+
+\newpage
+
+```{r, echo=FALSE,warning=FALSE,message=F,out.width="100%",fig.cap="\\label{fit_tot_b}Model fits to individual years of size composition data for total Bristol Bay red king crab in the directed fishery."}
+
+include_graphics("plots/BBRKCtot_size_all.png")
+
+```
+
+\newpage
+
+```{r, echo=FALSE,warning=FALSE,message=F,out.width="100%",fig.cap="\\label{bbrkc_est}Estimates of population processes for Bristol Bay red king crab."}
+
+include_graphics("plots/BBRKCmodel_growth.png")
+
+```
+
+\newpage
+
+\newpage
+
+```{r, echo=FALSE,warning=FALSE,message=F,out.width="100%",fig.cap="\\label{surv_ind_sm}Fits to the survey indices of abundance and size composition data for Saint Matthews blue king crab."}
+
+include_graphics("plots/SMBKCind_fits.png")
+
+```
+
+\newpage
+
+
+```{r, echo=FALSE,warning=FALSE,message=F,out.width="100%",fig.cap="\\label{fish_ind_sm}Fits to the retained and discarded abundances in the directed Saint Matthews blue king crab fishery."}
+
+include_graphics("plots/SMBKCcatch_fits.png")
+
+```
+
+\newpage
+
+
+```{r, echo=FALSE,warning=FALSE,message=F,out.width="100%",fig.cap="\\label{fit_surv_sm}Model fits to individual years of size composition data for male Saint Matthews blue king crab captured in the survey."}
+
+include_graphics("plots/SMBKCn_size_comp_all.png")
+
+```
+
+\newpage
+
+
+```{r, echo=FALSE,warning=FALSE,message=F,out.width="100%",fig.cap="\\label{fit_ret_sm}Model fits to individual years of size composition data for retained Saint Matthews blue king crab in the directed fishery."}
+
+include_graphics("plots/SMBKCret_size_all.png")
+
+```
+
+\newpage
+
+```{r, echo=FALSE,warning=FALSE,message=F,out.width="100%",fig.cap="\\label{fit_tot_sm}Model fits to individual years of size composition data for total Saint Matthews blue king crab in the directed fishery."}
+
+include_graphics("plots/SMBKCtot_size_all.png")
+
+```
+
+\newpage
+
+```{r, echo=FALSE,warning=FALSE,message=F,out.width="100%",fig.cap="\\label{smbkc_est}Estimates of population processes for Saint Matthews blue king crab."}
+
+include_graphics("plots/SMBKCmodel_growth.png")
+
+```
+
+\newpage
+
+
+\newpage
+
+```{r, echo=FALSE,warning=FALSE,message=F,out.width="100%",fig.cap="\\label{surv_ind_pir}Fits to the survey indices of abundance and size composition data for Pribilof Islands red king crab."}
+
+include_graphics("plots/PIRKCind_fits.png")
+
+```
+
+\newpage
+
+
+```{r, echo=FALSE,warning=FALSE,message=F,out.width="100%",fig.cap="\\label{fish_ind_pir}Fits to the retained and discarded abundances in the directed Pribilof Islands red king crab fishery."}
+
+include_graphics("plots/PIRKCcatch_fits.png")
+
+```
+
+\newpage
+
+
+```{r, echo=FALSE,warning=FALSE,message=F,out.width="100%",fig.cap="\\label{fit_surv_pir}Model fits to individual years of size composition data for male Pribilof Islands red king crab captured in the survey."}
+
+include_graphics("plots/PIRKCn_size_comp_all.png")
+
+```
+
+\newpage
+
+
+```{r, echo=FALSE,warning=FALSE,message=F,out.width="100%",fig.cap="\\label{pirkc_est}Estimates of population processes for Pribilof Islands red king crab."}
+
+include_graphics("plots/PIRKCmodel_growth.png")
+
+```
+
+\newpage
+
+\newpage
+
+```{r, echo=FALSE,warning=FALSE,message=F,out.width="100%",fig.cap="\\label{surv_ind_pib}Fits to the survey indices of abundance and size composition data for Pribilof Islands blue king crab."}
+
+include_graphics("plots/PIBKCind_fits.png")
+
+```
+
+\newpage
+
+
+```{r, echo=FALSE,warning=FALSE,message=F,out.width="100%",fig.cap="\\label{fish_ind_pib}Fits to the retained and discarded abundances in the directed Pribilof Islands blue king crab fishery."}
+
+include_graphics("plots/PIBKCcatch_fits.png")
+
+```
+
+\newpage
+
+
+```{r, echo=FALSE,warning=FALSE,message=F,out.width="100%",fig.cap="\\label{fit_surv_pib}Model fits to individual years of size composition data for male Pribilof Islands blue king crab captured in the survey."}
+
+include_graphics("plots/PIBKCn_size_comp_all.png")
+
+```
+
+\newpage
+
+
+```{r, echo=FALSE,warning=FALSE,message=F,out.width="100%",fig.cap="\\label{pibkc_est}Estimates of population processes for Pribilof Islands blue king crab."}
+
+include_graphics("plots/PIBKCmodel_growth.png")
+
+```
+
+\newpage
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r, echo=FALSE,warning=FALSE,message=F,out.width="100%",fig.cap="\\label{dharma_rec}Diagnostics for GAMs fit to estimated recruitment. QQ plot for residuals simulated using DHARMa and quantiles of residuals vs. predicted."}
+
+#include_graphics("plots/dharma_rec.png")
+
+```
+
+\newpage
+
+```{r, echo=FALSE,warning=FALSE,message=F,out.width="100%",fig.cap="\\label{dharma_imm}Diagnostics for GAMs fit to estimated immature mortality. QQ plot for residuals simulated using DHARMa and quantiles of residuals vs. predicted."}
+
+#include_graphics("plots/dharma_imm_m.png")
+
+```
+
+\newpage
+
+```{r, echo=FALSE,warning=FALSE,message=F,out.width="100%",fig.cap="\\label{dharma_mat}Diagnostics for GAMs fit to estimated mature mortality. QQ plot for residuals simulated using DHARMa and quantiles of residuals vs. predicted."}
+
+#include_graphics("plots/dharma_mat_m.png")
+
+```
+
+\newpage
+
+```{r, echo=FALSE,warning=FALSE,message=F,out.width="100%",fig.cap="\\label{dharma_term}Diagnostics for GAMs fit to the observed probability of having undergone terminal molt. QQ plot for residuals simulated using DHARMa and quantiles of residuals vs. predicted."}
+
+#include_graphics("plots/dharma_mat.png")
+
+```
+
+\newpage
+
+
+ 

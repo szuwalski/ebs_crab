@@ -94,7 +94,7 @@ PARAMETER_SECTION
   init_bounded_number fish_ret_sel_50_post(25,150)
   init_bounded_number fish_ret_sel_slope(0.0001,20)
   init_bounded_number fish_ret_sel_slope_post(0.0001,20)
-  init_bounded_vector fish_tot_sel_offset(1,ret_cat_size_yr_n,-40,40)
+  //init_bounded_vector fish_tot_sel_offset(1,ret_cat_size_yr_n,-40,40)
   init_bounded_number fish_tot_sel_slope(0.0001,20) 
   
   // init_bounded_number surv_omega(0,1,est_sel)
@@ -196,10 +196,11 @@ PROCEDURE_SECTION
      retain_fish_sel(year,size) = 1 / (1+exp(-fish_ret_sel_slope*(sizes(size)-fish_ret_sel_50)));
    }	  
 
-  for(int year=1;year<=ret_cat_size_yr_n;year++)
-   for(int size=1;size<=size_n;size++)
-   	total_fish_sel(ret_cat_size_yrs(year),size) = 1 / (1+exp(-fish_tot_sel_slope*(sizes(size)-(fish_ret_sel_50-fish_tot_sel_offset(year))))) ; 
-   
+ // for(int year=1;year<=ret_cat_size_yr_n;year++)
+   //for(int size=1;size<=size_n;size++)
+   	//total_fish_sel(ret_cat_size_yrs(year),size) = 1 / (1+exp(-fish_tot_sel_slope*(sizes(size)-(fish_ret_sel_50-fish_tot_sel_offset(year))))) ; 
+    
+
 
   //nat_m_dev(2020) = 0;
   //nat_m_mat_dev(2020) = 0;
@@ -490,6 +491,19 @@ REPORT_SECTION
   {
     report << (elem_prod(selectivity_mat(i),mat_n_size_pred(i)))/mat_numbers_pred(i)<<endl;
   }
+  report <<"$obs_imm_n_size" << endl;
+  for(int i=styr; i<=endyr; i++)
+  {
+
+    report << imm_n_size_obs(i)<<endl;
+  }
+  
+  report <<"$obs_mat_n_size" << endl;
+  for(int i=styr; i<=endyr; i++)
+  {
+    report << mat_n_size_obs(i)<<endl;
+  }
+
 
   report<<"$styr"<<endl;
   report<<styr<<endl;
@@ -607,8 +621,27 @@ REPORT_SECTION
   {
     report << (use_term_molt(i))<<endl;
   }
- 	 
-   
+   report <<"$sizes" << endl;
+  report << sizes << endl;	 
+
+  report <<"$imm_cv" << endl;
+  report << sigma_numbers_imm << endl;	
+  
+  report <<"$mat_cv" << endl;
+  report << sigma_numbers_mat << endl;	
+
+  report <<"$ret_cat_yrs" << endl;
+  report << ret_cat_yrs << endl;	
+  
+  report <<"$tot_cat_yrs" << endl;
+  report << tot_cat_yrs << endl;	
+
+  report <<"$ret_cat_size_yrs" << endl;
+  report << ret_cat_size_yrs << endl;	
+  
+  report <<"$tot_cat_size_yrs" << endl;
+  report << tot_cat_size_yrs << endl;	
+
     save_gradients(gradients);
   
 RUNTIME_SECTION

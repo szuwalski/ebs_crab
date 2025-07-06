@@ -114,7 +114,7 @@
 # smooth_q_weight 																																															
 0.001																																															
 # smooth_m_weight 																																															
-0.1																																															
+10																																															
 # est_log_m_mu																																															
 1																																															
 # est_sigma_q																																															
