@@ -247,7 +247,7 @@ FUNCTION evaluate_the_objective_function
   for (int year=1;year<=tot_cat_yr_n;year++)
     tot_cat_like += square( log(pred_tot_n(tot_cat_yrs(year))) - log(tot_cat_numbers(year))) / (2.0 * square(sigma_numbers_tot));
 
-  // immature numbers at size data
+  //  numbers at size data
   surv_sc_like = 0;
   for (int year=styr;year<=endyr;year++)
    for (int size=1;size<=size_n;size++)

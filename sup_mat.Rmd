@@ -12,7 +12,7 @@ header-includes:
 #-  \pagenumbering{gobble}
 csl: fish-and-fisheries.csl
 toc: yes
-title: "Supplementary information for 'Episodic mortality drives Bering Sea crab populations'"
+title: "Supplementary information for 'Mortality events are important drivers of Bering Sea crab populations'"
 ---
 
 ```{r, include=FALSE}
@@ -172,6 +172,7 @@ These models were fit using AD Model Builder (ADMB; Fournier et al., 2012). Vari
 \autoref{fit_disc_o}
 \autoref{snow_est}
 
+
 #### Tanner crab
 
 \autoref{surv_ind_t}
@@ -182,6 +183,7 @@ These models were fit using AD Model Builder (ADMB; Fournier et al., 2012). Vari
 \autoref{fit_disc_t}
 \autoref{tan_est}
 
+
 #### Bristol Bay red king crab
 
 \autoref{surv_ind_b}
@@ -190,6 +192,7 @@ These models were fit using AD Model Builder (ADMB; Fournier et al., 2012). Vari
 \autoref{fit_ret_b}
 \autoref{fit_tot_b}
 \autoref{bbrkc_est}
+
 
 #### Saint Matthews blue king crab
 
@@ -200,12 +203,14 @@ These models were fit using AD Model Builder (ADMB; Fournier et al., 2012). Vari
 \autoref{fit_tot_sm}
 \autoref{smbkc_est}
 
+
 #### Pribilof Islands red king crab
 
 \autoref{surv_ind_pir}
 \autoref{fish_ind_pir}
 \autoref{fit_surv_pir}
 \autoref{pirkc_est}
+\autoref{pirkc_dharma}
 
 #### Pribilof Islands blue king crab
 
@@ -213,7 +218,6 @@ These models were fit using AD Model Builder (ADMB; Fournier et al., 2012). Vari
 \autoref{fish_ind_pib}
 \autoref{fit_surv_pib}
 \autoref{pibkc_est}
-
 
 
 
@@ -230,11 +234,16 @@ where 's()' is a smoothing function based on thin-plate splines, $\phi$ is a mat
 
 ### Fits and diagnostics
 
-AIC, DHARMa, crossvalidation to come.
+The inclusion of density, temperature, and size resulted in better fitting models for all stock/maturity combinations on the basis of Akaike's Information Criterion (Akaike, 1970) except mature Tanner crab \autoref{aic_dev_exp}. Some improvements in AIC were relatively small, like for SMBKC, in which density appeared to be the key covariate. PIBKC had the largest improvement in AIC. The deviance explained by the GAMs ranged from 15-45% for models in which AIC indicated an improvement in model fits.
 
-
-
-
+Model diagnostics were performed by simulated residuals using the R package 'DHARMa', which is useful when using link functions other than Gaussian. Concurvity was also assessed with the function 'concurvity()' in the library 'mgcv'. All Residuals were simulated using the R package *DHARMa* to 
+\autoref{snow_dharma}
+\autoref{snow_dharma2}
+\autoref{tan_dharma}
+\autoref{tan_dharma2}
+\autoref{bbrkc_dharma}
+\autoref{smbkc_dharma}
+\autoref{pibkc_dharma}
 
 \newpage
 
@@ -637,55 +646,78 @@ include_graphics("plots/PIBKCmodel_growth.png")
 
 
 
+```{r, echo=FALSE,warning=FALSE,message=F,out.width="100%",fig.cap="\\label{aic_dev_exp}Changes in AIC from a null model by covariate(s), stock, and maturity state (for Chionoecetes spp.). Negative values represent improvements to fit given parameters used; positive values represent a degradation given parameters used. Columns represent different model configurations; rows are stock/maturity state. Deviance explained (right) is calculated from the GAM that includes all covariates."}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-```{r, echo=FALSE,warning=FALSE,message=F,out.width="100%",fig.cap="\\label{dharma_rec}Diagnostics for GAMs fit to estimated recruitment. QQ plot for residuals simulated using DHARMa and quantiles of residuals vs. predicted."}
-
-#include_graphics("plots/dharma_rec.png")
+include_graphics("plots/model_select.png")
 
 ```
 
 \newpage
 
-```{r, echo=FALSE,warning=FALSE,message=F,out.width="100%",fig.cap="\\label{dharma_imm}Diagnostics for GAMs fit to estimated immature mortality. QQ plot for residuals simulated using DHARMa and quantiles of residuals vs. predicted."}
+```{r, echo=FALSE,warning=FALSE,message=F,out.width="100%",fig.cap="\\label{snow_dharma}Diagnostics for GAMs fit to estimated mortality for immature snow crab. QQ plot for residuals simulated using DHARMa and quantiles of residuals vs. predicted."}
 
-#include_graphics("plots/dharma_imm_m.png")
-
-```
-
-\newpage
-
-```{r, echo=FALSE,warning=FALSE,message=F,out.width="100%",fig.cap="\\label{dharma_mat}Diagnostics for GAMs fit to estimated mature mortality. QQ plot for residuals simulated using DHARMa and quantiles of residuals vs. predicted."}
-
-#include_graphics("plots/dharma_mat_m.png")
+include_graphics("plots/dharma_mSnow_imm.png")
 
 ```
 
 \newpage
 
-```{r, echo=FALSE,warning=FALSE,message=F,out.width="100%",fig.cap="\\label{dharma_term}Diagnostics for GAMs fit to the observed probability of having undergone terminal molt. QQ plot for residuals simulated using DHARMa and quantiles of residuals vs. predicted."}
+```{r, echo=FALSE,warning=FALSE,message=F,out.width="100%",fig.cap="\\label{snow_dharma2}Diagnostics for GAMs fit to estimated mortality for mature snow crab. QQ plot for residuals simulated using DHARMa and quantiles of residuals vs. predicted."}
 
-#include_graphics("plots/dharma_mat.png")
+include_graphics("plots/dharma_mSnow_mat.png")
 
 ```
 
 \newpage
 
 
- 
+```{r, echo=FALSE,warning=FALSE,message=F,out.width="100%",fig.cap="\\label{tan_dharma}Diagnostics for GAMs fit to estimated mortality for immature Tanner crab. QQ plot for residuals simulated using DHARMa and quantiles of residuals vs. predicted."}
+
+include_graphics("plots/dharma_mTanner_imm.png")
+
+```
+
+\newpage
+
+```{r, echo=FALSE,warning=FALSE,message=F,out.width="100%",fig.cap="\\label{tan_dharma2}Diagnostics for GAMs fit to estimated mortality for mature Tanner crab. QQ plot for residuals simulated using DHARMa and quantiles of residuals vs. predicted."}
+
+include_graphics("plots/dharma_mTanner_mat.png")
+
+```
+
+\newpage
+
+
+```{r, echo=FALSE,warning=FALSE,message=F,out.width="100%",fig.cap="\\label{bbrkc_dharma}Diagnostics for GAMs fit to estimated mortality for Bristol Bay red king crab. QQ plot for residuals simulated using DHARMa and quantiles of residuals vs. predicted."}
+
+include_graphics("plots/dharma_mBBRKC.png")
+
+```
+
+\newpage
+
+```{r, echo=FALSE,warning=FALSE,message=F,out.width="100%",fig.cap="\\label{smbkc_dharma}Diagnostics for GAMs fit to estimated mortality for St. Matthews blue king crab. QQ plot for residuals simulated using DHARMa and quantiles of residuals vs. predicted."}
+
+include_graphics("plots/dharma_mSMBKC.png")
+
+```
+
+\newpage
+
+```{r, echo=FALSE,warning=FALSE,message=F,out.width="100%",fig.cap="\\label{pibkc_dharma}Diagnostics for GAMs fit to estimated mortality for Pribilof Islands blue king crab. QQ plot for residuals simulated using DHARMa and quantiles of residuals vs. predicted."}
+
+include_graphics("plots/dharma_mPIBKC.png")
+
+```
+
+\newpage
+
+```{r, echo=FALSE,warning=FALSE,message=F,out.width="100%",fig.cap="\\label{pirkc_dharma}Diagnostics for GAMs fit to estimated mortality for Pribilof Islands red king crab. QQ plot for residuals simulated using DHARMa and quantiles of residuals vs. predicted."}
+
+include_graphics("plots/dharma_mPIRKC.png")
+
+```
+
+\newpage
+
+

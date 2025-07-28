@@ -46,6 +46,9 @@ years<-seq(outs_in[[x]]$styr,outs_in[[x]]$endyr)
 #outs_in[[x]]$pred_pop_num
 tmp_ssn<-apply(outs_in[[x]]$pred_pop_num[,which(outs_in[[x]]$sizes>maturity[x])],1,sum)
 tmp_ssn<-tmp_ssn/max(tmp_ssn)
+
+cbind(apply(outs_in[[x]]$pred_pop_num,1,sum)/max(apply(outs_in[[x]]$pred_pop_num,1,sum),na.rm=T),
+      tmp_ssn)
 plot_dat<-data.frame(values=c(outs_in[[x]]$recruits/max(outs_in[[x]]$recruits),
                               outs_in[[x]]$`natural mortality`[,1],
                               outs_in[[x]]$est_fishing_mort,
@@ -311,7 +314,8 @@ f_sel<-ggplot()+
   theme(axis.title.y = element_blank(),
         axis.text.y = element_blank(),
         axis.ticks.y = element_blank(),
-        legend.position=c(.25,.8))+ylim(0,1)+
+        legend.position=c(.25,.8),
+        legend.background = element_blank())+ylim(0,1)+
   expand_limits(y=0)
 
 indat<-outs_in[[y]]$size_trans
@@ -377,6 +381,26 @@ n_size_all<-ggplot(data=input_size,aes(x = (Size), y =Proportion,col=quant)) +
 png(paste("plots/",species[y],"n_size_comp_all.png",sep=""),height=8,width=8,res=350,units='in') 
 print(n_size_all)
 dev.off()
+
+if(species[y]=="PIRKC")
+{
+n_size_all_s<-ggplot(data=filter(input_size,Year>1990),aes(x = (Size), y =Proportion,col=quant)) + 
+  geom_line(lwd=1.1)+
+  theme_bw()+
+  ylab("Proportion")+theme(axis.title=element_text(size=11))+
+  xlab("Carapace length (mm)")+
+  theme(axis.text.x = element_text(angle = 90, vjust = 1, hjust = 1))+
+  theme(axis.line = element_line(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank()) +
+  facet_wrap(~Year)+ labs(col='') 
+
+png(paste("plots/",species[y],"n_size_comp_small.png",sep=""),height=8,width=8,res=350,units='in') 
+print(n_size_all_s)
+dev.off()
+}
 
 #==aggregate
 df2<-data.frame(pred=apply(outs_in[[y]]$'pred numbers at size',2,median),

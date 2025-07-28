@@ -9,6 +9,10 @@ library(patchwork)
 library(mgcv)
 library(png)
 library(grid)
+library(DHARMa)
+library(itsadug)
+library(mgcViz)
+library(directlabels)
 outs<-read.csv("data/all_output.csv")
 outs<-filter(outs,Year<2023)
 alt_met<-read.csv("data/alt_metrics_calc.csv")
@@ -38,6 +42,8 @@ dev_expl_m<-NULL
 keep_AIC_r<-NULL
 keep_AIC_m<-NULL
 keep_AIC_m_big<-NULL
+keep_conc<-list(list())
+conc_cnt<-1
 for(y in 1:length(use_stocks))
 {
 set1<-filter(outs,species==use_stocks[y])[,-c(1,6)]
@@ -89,6 +95,19 @@ mod_m<-gam(data=mod_dat,Other_mortality~s(Abundance,k=4)+s(Temperature,k=4)+s(Si
 mod_m_a<-gam(data=mod_dat,Other_mortality~s(Abundance,k=4),family=tw())
 mod_m_t<-gam(data=mod_dat,Other_mortality~s(Temperature,k=4),family=tw())
 mod_m_s<-gam(data=mod_dat,Other_mortality~s(Size,k=3),family=tw())
+
+ keep_conc[[conc_cnt]]<- concurvity(mod_m,full=FALSE)$observed[-1,-1]
+   conc_cnt<-conc_cnt+1
+# gam.check(mod_m)
+# acf(resid(mod_m))
+# pacf(resid(mod_m))
+simout<-simulateResiduals(mod_m,n=250)
+
+png(paste("plots/dharma_m",use_stocks[y],".png",sep=''),height=6,width=8,res=350,units='in') 
+plot(simout)
+dev.off()
+
+
 summary(mod_m)
 summary(base_mod_m)
 plot(mod_m,pages=1)
@@ -127,6 +146,47 @@ for(x in 1:(length(plotted)))
 }
 
 }
+
+#==do a Pribs model
+set1_rkc<-filter(outs,species%in%c("PIRKC"))[,-c(1,6)]
+set2_rkc<-filter(alt_met,stock%in%c("PIRKC"))[,-1]
+colnames(set2)[4]<-"species"
+
+casted<-dcast(set1_rkc,Year~process,value.var="values")
+colnames(casted)[4]<-"Other_mortality"
+mod_dat_rkc<-merge(casted,set2_rkc,by="Year")
+
+set1_bkc<-filter(outs,species%in%c("PIBKC"))[,-c(1,6)]
+set2_bkc<-filter(alt_met,stock%in%c("PIBKC"))[,-1]
+colnames(set2)[4]<-"species"
+
+casted<-dcast(set1_bkc,Year~process,value.var="values")
+colnames(casted)[4]<-"Other_mortality"
+mod_dat_bkc<-merge(casted,set2_bkc,by="Year")
+
+#==predict pirkc with pibkc abundance 
+mod_dat<-mod_dat_rkc
+mod_dat$bkc_n<-mod_dat_bkc$Abundance[-1]
+mod_dat$bkc_ssb<-mod_dat_bkc$`Spawner abundance`[-1]
+mod_m<-gam(data=mod_dat,Other_mortality~s(Abundance,k=4)+s(Temperature,k=4)+s(Size,k=3)+s(bkc_ssb,k=3)+s(bkc_n,k=3),family=tw())
+summary(mod_m)
+plot(mod_m,pages=1)
+
+#==predict pibkc M with pirkc abundance 
+mod_dat<-mod_dat_bkc[-1,]
+mod_dat$rkc_n<-mod_dat_rkc$Abundance
+mod_dat$rkc_ssb<-mod_dat_rkc$`Spawner abundance`
+mod_m<-gam(data=mod_dat,Other_mortality~s(Abundance,k=4)+s(Temperature,k=4)+s(Size,k=3),family=tw())
+summary(mod_m)
+plot(mod_m,pages=1)
+
+#==predict pibkc R with pirkc abundance 
+mod_dat<-mod_dat_bkc[-1,]
+mod_dat$rkc_n<-mod_dat_rkc$Abundance
+mod_dat$rkc_ssb<-mod_dat_rkc$`Spawner abundance`
+mod_m<-gam(data=mod_dat,Recruitment ~s(Abundance,k=3)+s(Temperature,k=3)+s(Size,k=3)+s(rkc_n,k=3),family=tw())
+summary(mod_m)
+plot(mod_m,pages=1)
 
 #============================
 # chionoecetes species
@@ -175,6 +235,13 @@ for(y in 1:length(use_stocks))
   #==immature mortality
   base_mod_imm_m<-gam(data=mod_dat,M_imm~1,family=tw())
   mod_imm_m<-gam(data=mod_dat,M_imm~s(N_imm,k=4)+s(Temperature,k=4)+s(Size,k=3),family=tw())
+  keep_conc[[conc_cnt]]<- concurvity(mod_imm_m,full=FALSE)$observed[-1,-1]
+  conc_cnt<-conc_cnt+1
+  simout<-simulateResiduals(mod_imm_m,n=250)
+  
+  png(paste("plots/dharma_m",use_stocks[y],"_imm.png",sep=''),height=6,width=8,res=350,units='in') 
+  plot(simout)
+  dev.off()
   
   mod_imm_m_a<-gam(data=mod_dat,M_imm~s(N_imm,k=4),family=tw())
   mod_imm_m_t<-gam(data=mod_dat,M_imm~s(Temperature,k=4),family=tw())
@@ -216,6 +283,14 @@ for(y in 1:length(use_stocks))
   mod_imm_m_a<-gam(data=mod_dat,Other_mortality~s(Abundance,k=4),family=tw())
   mod_imm_m_t<-gam(data=mod_dat,Other_mortality~s(Temperature,k=4),family=tw())
   mod_imm_m_s<-gam(data=mod_dat,Other_mortality~s(Size,k=3),family=tw())
+  keep_conc[[conc_cnt]]<- concurvity(mod_imm_m,full=FALSE)$observed[-1,-1]
+  conc_cnt<-conc_cnt+1
+  simout<-simulateResiduals(mod_imm_m,n=250)
+  
+  png(paste("plots/dharma_m",use_stocks[y],"_mat.png",sep=''),height=6,width=8,res=350,units='in') 
+  plot(simout)
+  dev.off()
+  
   
   summary(mod_imm_m)
   plot(mod_imm_m,pages=1)
@@ -248,10 +323,79 @@ for(y in 1:length(use_stocks))
   
 }
 
-colnames(keep_AIC_m_big)<-c("No covars","All covars","Abundance","Temp","Size")
+colnames(keep_AIC_m_big)<-c("No covars","All covars","Density","Temp","Size")
 
 rownames(keep_AIC_m_big)<-c("BBRKC","PIRKC","SMBKC","PIBKC","Snow (imm)","Snow (mat)","Tanner (imm)","Tanner (mat)")
 
+names(dev_expl_m)<-c("BBRKC","PIRKC","SMBKC","PIBKC","Snow (imm)","Snow (mat)","Tanner (imm)","Tanner (mat)")
+
+
+alt_AIC<-keep_AIC_m_big
+for(x in 1:nrow(alt_AIC))
+  for(y in 2:ncol(alt_AIC))
+    alt_AIC[x,y]<--1*(alt_AIC[x,1]-alt_AIC[x,y])
+
+in_dat_t1<-as.data.frame(round(alt_AIC,2))
+
+library(tidyr)
+library(scales)
+# Specify the columns to be colored
+columns_to_color <- colnames(in_dat_t1[2:5])
+
+# Reshape the data for ggplot2
+data_long <- in_dat_t1 %>%
+  mutate(RowID = rownames(in_dat_t1)) %>%
+  pivot_longer(cols = all_of(columns_to_color), names_to = "Variable", values_to = "Value")
+
+# Create the heatmap-like graphic
+aic_table<-ggplot(data_long, aes(x = Variable, y = as.factor(RowID), fill = Value)) +
+  geom_tile(color = "black") + # Add borders to cells
+  scale_fill_gradient2(
+    low = "forestgreen",
+    mid = "white",
+    high = "tomato3",
+    midpoint = 0,
+    space = "Lab",
+    limits=c(-10,10),
+    oob=squish
+  ) +
+  geom_text(aes(label = Value), color = "black") + # Add cell values as text
+  labs(title = "Change in AIC from null model", x = "",y='') +
+  theme_minimal()+
+  theme(legend.position="none")
+
+use_dat<-melt(dev_expl_m)
+colnames(use_dat)[1]<-"Deviance_explained"
+use_dat$stock<-rownames(use_dat)
+
+my_values <- dev_expl_m
+
+# Convert the vector to a data frame, necessary for ggplot2
+df <- data.frame(
+  Value = my_values,
+  Row = seq_along(my_values),  # Assign a row number for each value
+  Row_Name = names(my_values)         # Add the row names to the data frame
+)
+
+# Create the ggplot
+dev_ex_plot<-ggplot(df, aes(x = 1, y = as.factor(Row_Name), fill = Value)) + # Map x to a single column (1), y to Row, and fill to Value
+  geom_tile(color = "black") +  # Create tiles, add a black border for clarity
+  scale_fill_gradient(low = "white", high = "cornflowerblue") +  # Apply the gradient
+  geom_text(aes(label = Value), color = "black") + # Add the value as text inside each tile
+ # geom_text(aes(x = 0.5, label = Row_Name), hjust = 1, color = "black") + # Add row names to the left of the tiles
+  labs(title = "Deviance explained", x = NULL, y = NULL) +  # Add title and remove axis labels
+  theme_minimal() + 
+  xlim(0,2)+
+  theme(axis.text.x = element_blank(), # Remove x-axis text
+        axis.ticks.x = element_blank(), # Remove x-axis ticks
+        axis.text.y = element_blank(), # Remove x-axis text
+        axis.ticks.y = element_blank(), # Remove x-axis ticks
+        panel.grid = element_blank(),  # Remove grid lines
+        legend.position = "none")  # Place the legend on the right
+
+png("plots/model_select.png",height=6,width=7,res=350,units='in') 
+aic_table + dev_ex_plot +plot_layout(width=c(2,1))
+dev.off()
 
 in_col<-c("#ff5050","#0034c377","#ff505077","#0034c3")
 in_col<-c("#ff5050","#0034c377","#ff505077","#0034c3","#3da550","#ff8f38")
