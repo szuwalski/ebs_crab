@@ -16,6 +16,7 @@ library(directlabels)
 outs<-read.csv("data/all_output.csv")
 outs<-filter(outs,Year<2023)
 alt_met<-read.csv("data/alt_metrics_calc.csv")
+unc_mort<-read.csv("data/uncertainty_mort.csv")
 
 #======================================
 # full models:
@@ -28,7 +29,6 @@ alt_met<-read.csv("data/alt_metrics_calc.csv")
 #==first column are the estimates and the model fits
 #==remaining columns represent the variables
 #==only 'significant' variables are colored in
-unique(outs$process)
 #==CHECK ON APPROPRIATE LAGS FOR RECRUITMENT
 #==THINK ABOUT LARGE SCALE DRIVERS TOO
 
@@ -48,6 +48,7 @@ for(y in 1:length(use_stocks))
 {
 set1<-filter(outs,species==use_stocks[y])[,-c(1,6)]
 set2<-filter(alt_met,stock==use_stocks[y])[,-1]
+set3<-filter(unc_mort)
 colnames(set2)[4]<-"species"
 
 casted<-dcast(set1,Year~process,value.var="values")
@@ -329,6 +330,28 @@ rownames(keep_AIC_m_big)<-c("BBRKC","PIRKC","SMBKC","PIBKC","Snow (imm)","Snow (
 
 names(dev_expl_m)<-c("BBRKC","PIRKC","SMBKC","PIBKC","Snow (imm)","Snow (mat)","Tanner (imm)","Tanner (mat)")
 
+plot_conc<-NULL
+for(x in 1:length(keep_conc))
+{
+ tmp<-melt(keep_conc[[x]]) 
+ levels(tmp$Var1)<-c("s(Abundance)","s(Size)","s(Temperature)")
+ levels(tmp$Var2)<-c("s(Abundance)","s(Size)","s(Temperature)")
+ tmp$stock<-names(dev_expl_m)[x]
+ plot_conc<-rbind(plot_conc,tmp)
+}
+
+plot_conc[plot_conc==1]<-NA
+png("plots/model_concurvity.png",height=7,width=7,res=350,units='in') 
+ggplot(plot_conc)+
+  geom_tile(aes(x=Var1,y=Var2,fill=value))+
+  geom_text(aes(x=Var1,y=Var2,label=round(value,2)))+
+  scale_fill_gradient(low='white',high='red',na.value='whitesmoke')+
+  facet_wrap(~stock)+theme_bw()+
+  theme(legend.position=c(.85,.15))+
+  ggtitle("Estimated concurvity among variables by model")+
+  ylab("")+xlab("")+guides(fill=guide_legend(title="Concurvity"))
+dev.off()
+
 
 alt_AIC<-keep_AIC_m_big
 for(x in 1:nrow(alt_AIC))
@@ -428,16 +451,49 @@ rec_plot_trm<-ggplot(rec_term)+
   scale_color_manual(values=in_col)+
   scale_fill_manual(values=in_col)
   
-mort_plot<-ggplot(out_plot_m)+
-  geom_point(aes(x=year,y=obs))+
-  geom_line(aes(x=year,y=obs),col='black',lwd=1.2)+
-  geom_ribbon(aes(x=year,ymin=y_dn,ymax=y_up,fill=stock),alpha=0.3,lwd=2)+
-  geom_line(aes(x=year,y=preds,col=stock),lwd=1.5)+
+ughh<-out_plot_m[,c(1,5,6)]
+colnames(ughh)<-c("est_m","year","stock'")
+
+mod_mort<-unc_mort
+mod_mort$up_m[mod_mort$up_m>max(mod_mort$est_m)]<-1.5*max(mod_mort$est_m)
+
+mod_mort_cap <- mod_mort %>%
+  group_by(stock) %>%
+  mutate(up_m = pmin(up_m, 1.5 * max(est_m, na.rm = TRUE))) %>% # The `pmin` function is used here to take the minimum of the two values element-wise, effectively capping the up_m values.
+  ungroup()
+
+
+mort_plot<-ggplot()+
+  geom_point(data=out_plot_m,aes(x=year,y=obs))+
+  geom_errorbar(data=filter(mod_mort_cap,year<2023&year!=2020),aes(x=year,y=est_m,ymin=dn_m,ymax=up_m))+
+  geom_ribbon(data=out_plot_m,aes(x=year,ymin=y_dn,ymax=y_up,fill=stock),alpha=0.3,lwd=2)+
+  geom_line(data=out_plot_m,aes(x=year,y=preds,col=stock),lwd=1.5)+
   theme_bw()+ylab("Mortality")+
   scale_color_manual(values=in_col2)+
   scale_fill_manual(values=in_col2)+
   facet_wrap(~stock,ncol=1,scales='free_y')+
   theme(legend.position='none')+expand_limits(y=0)
+
+mort_plot_alt<-ggplot()+
+  geom_point(data=out_plot_m,aes(x=year,y=obs))+
+  geom_errorbar(data=filter(mod_mort_cap,year<2023&year!=2020),aes(x=year,y=est_m,ymin=dn_m,ymax=up_m))+
+  geom_ribbon(data=out_plot_m,aes(x=year,ymin=y_dn,ymax=y_up,fill=stock),alpha=0.3,lwd=2)+
+  geom_line(data=out_plot_m,aes(x=year,y=preds,col=stock),lwd=1.5)+
+  theme_bw()+ylab("Mortality")+
+  scale_color_manual(values=in_col2)+
+  scale_fill_manual(values=in_col2)+
+  facet_wrap(~stock,ncol=1,scales='free_y')+
+  theme(legend.position='none')+expand_limits(y=0)
+
+mort_plot_alt_trans<-ggplot()+
+  geom_point(data=out_plot_m,aes(x=year,y=1-exp(-obs)))+
+  geom_errorbar(data=filter(unc_mort,year<2023&year!=2020),aes(x=year,y=est_m,ymin=1-exp(-dn_m),ymax=1-exp(-up_m)))+
+  theme_bw()+ylab("p(mortality)")+
+  scale_color_manual(values=in_col2)+
+  scale_fill_manual(values=in_col2)+
+  facet_wrap(~stock,ncol=1,scales='free_y')+
+  theme(legend.position='none')+ylim(0,1)
+
 
 mort_plot_trm<-ggplot(mort_term)+
   geom_line(aes(x=x,y=y,col=stock),lwd=2)+

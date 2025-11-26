@@ -15,6 +15,14 @@ library(patchwork)
 
 #==need an example that links mortality to density
 
+#==run 02_figure_2 and 03_figure_3 first to get keep_uncertainty_fishn
+norm_fish_n<-keep_uncertainty_fishn
+unq_st<-unique(norm_fish_n$stock)
+for(x in 1:length(unq_st))
+{
+  indi<-which(norm_fish_n$stock==unq_st[x])  
+  norm_fish_n[indi,2:4]<- norm_fish_n[indi,2:4]/max(norm_fish_n[indi,2])
+}
 
 #==add PIBKC, PIRKC
 rep_files<-c("/models/bbrkc/rkc.rep")
@@ -224,13 +232,13 @@ ggplot()+
   geom_line(data=eq_df,aes(x=f_mort,y=yield),col='red',lwd=1.25)+
   theme_bw()
 
-png("plots/yield_curv.png",height=5,width=7,res=350,units='in') 
-ggplot()+
-  geom_boxplot(data=merged,aes(x=f_mort,y=yield,group=f_mort),fill='grey')+
-  geom_line(data=eq_df,aes(x=f_mort,y=yield),col='red',lwd=1.25)+
-  theme_bw()+xlab("Fishing mortality")+
-  ylab("Yield")+xlim(0,1.5)
-dev.off()
+# png("plots/yield_curv.png",height=5,width=7,res=350,units='in') 
+# ggplot()+
+#   geom_boxplot(data=merged,aes(x=f_mort,y=yield,group=f_mort),fill='grey')+
+#   geom_line(data=eq_df,aes(x=f_mort,y=yield),col='red',lwd=1.25)+
+#   theme_bw()+xlab("Fishing mortality")+
+#   ylab("Yield")+xlim(0,1.5)
+# dev.off()
 
 ggplot()+
   geom_boxplot(data=merged,aes(x=f_mort,y=MMB,group=f_mort),fill='grey')+
@@ -315,12 +323,53 @@ bio_comp<-ggplot()+
         axis.text.x=element_blank(),
         axis.ticks.x=element_blank())+xlim(0,0.6)
 
+
+mod_input<-norm_fish_n
+mod_input$up_m[mod_input$up_m>1.2]<-1.2
+mod_input$dn_m[mod_input$dn_m<0.01]<-0.01
+mod_input$fish<-"Regularly fished"
+mod_input$fish[which(mod_input$stock%in%c("PIBKC","PIRKC","SMBKC"))]<-"Rarely fished"
+in_col<-c("#ff5050","#0034c377","#ff505077","#0034c3","#3da550","#ff8f38")
+
+fished_n_rel<-ggplot()+
+  geom_ribbon(data=mod_input,aes(x=Year,ymin=dn_m,ymax=up_m,fill=stock),alpha=.3)+
+  geom_line(data=mod_input,aes(x=Year,y=tot_n,col=stock),alpha=.7)+
+  geom_point(data=mod_input,aes(x=Year,y=tot_n,col=stock),alpha=.7,size=.51)+
+  scale_color_manual(values=in_col)+
+  facet_wrap(~fish,ncol=1)+
+  guides(colour = "none")+
+  labs(x="Year",y="Relative abundance")+
+  theme_bw()+theme(legend.position='none',
+                   axis.line = element_line(colour = "black"),
+                   panel.grid.major = element_blank(),
+                   panel.grid.minor = element_blank(),
+                   panel.border = element_blank(),
+                   panel.background = element_blank(),
+                   legend.title=element_blank(),
+                   legend.background = element_blank(),
+                   legend.box.background = element_blank(),
+                   legend.key = element_blank(),
+                   plot.margin=unit(c(.1,.1,.1,.1),'cm'))+xlab("")+
+  scale_fill_manual(values=in_col)
+
+
+
+
+
 png("plots/yield_curv3.png",height=8,width=4,res=350,units='in') 
 bio_comp / f_comp
 dev.off()
 
 png("plots/yield_curv3_stock.png",height=7,width=9,res=350,units='in') 
 bio_comp / f_comp | fishable_n 
+dev.off()
+
+#==need 05_size_changes ran first
+png("plots/yield_curv5_stock.png",height=6,width=9,res=350,units='in') 
+ prop_fish | fished_n_rel |bio_comp / f_comp 
+dev.off()
+png("plots/yield_curv6_stock.png",height=7,width=11,res=350,units='in') 
+prop_fish2 | fished_n_rel |bio_comp / f_comp 
 dev.off()
 
 merged2<-merge(melted_y2,melted_mmb2)

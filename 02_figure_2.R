@@ -33,6 +33,62 @@ outs_in<-list(list())
 for(x in 1:length(rep_files))
   outs_in[[x]]<-readList(paste(getwd(),rep_files[x],sep=""))
 
+#==get uncertainty in M estimates
+cor_files<-c("/models/bbrkc/rkc.cor",
+             "/models/pirkc/rkc.cor",
+             "/models/smbkc/bkc.cor",
+             "/models/pibkc/bkc.cor")
+input_m<-c(-1.4997,-1.229,-1.6225,-1.6225)
+keep_uncertainty_m<-NULL
+keep_uncertainty_totn<-NULL
+keep_uncertainty_fishn<-NULL
+for(x in 1:length(rep_files))
+{
+  ttt<-readLines(paste(getwd(),cor_files[x],sep=""))
+  take_em<-grep('nat_m',ttt)
+  yrs<-seq(outs_in[[x]]$styr,outs_in[[x]]$endyr)
+  for(y in 1:length(take_em))
+  {
+  zzz<-unlist(strsplit(ttt[take_em[y]],split=' '))
+  tmp<-data.frame(stock=species[x],
+                  est_m=exp(input_m[x]+as.numeric(zzz[nzchar(zzz)][3])),
+                  up_m=exp(input_m[x]+as.numeric(zzz[nzchar(zzz)][3])+as.numeric(zzz[nzchar(zzz)][4])*1.96),
+                  dn_m=exp(input_m[x]+as.numeric(zzz[nzchar(zzz)][3])-as.numeric(zzz[nzchar(zzz)][4])*1.96),
+                  sd=as.numeric(zzz[nzchar(zzz)][4]),
+                  Year=yrs[y])
+  keep_uncertainty_m<-rbind(keep_uncertainty_m,tmp)
+  }
+  
+  take_em<-grep('total_population_n',ttt)
+  yrs<-seq(outs_in[[x]]$styr,outs_in[[x]]$endyr)
+  for(y in 1:length(take_em))
+  {
+    zzz<-unlist(strsplit(ttt[take_em[y]],split=' '))
+    tmp<-data.frame(stock=species[x],
+                    tot_n=as.numeric(zzz[nzchar(zzz)][3]),
+                    up_m=as.numeric(zzz[nzchar(zzz)][3])+as.numeric(zzz[nzchar(zzz)][4])*1.96,
+                    dn_m=as.numeric(zzz[nzchar(zzz)][3])-as.numeric(zzz[nzchar(zzz)][4])*1.96,
+                    sd=as.numeric(zzz[nzchar(zzz)][4]),
+                    Year=yrs[y])
+    keep_uncertainty_totn<-rbind(keep_uncertainty_totn,tmp)
+  }  
+  take_em<-grep('fished_population_n',ttt)
+  yrs<-seq(outs_in[[x]]$styr,outs_in[[x]]$endyr)
+  for(y in 1:length(take_em))
+  {
+    zzz<-unlist(strsplit(ttt[take_em[y]],split=' '))
+    tmp<-data.frame(stock=species[x],
+                    tot_n=as.numeric(zzz[nzchar(zzz)][3]),
+                    up_m=as.numeric(zzz[nzchar(zzz)][3])+as.numeric(zzz[nzchar(zzz)][4])*1.96,
+                    dn_m=as.numeric(zzz[nzchar(zzz)][3])-as.numeric(zzz[nzchar(zzz)][4])*1.96,
+                    sd=as.numeric(zzz[nzchar(zzz)][4]),
+                    Year=yrs[y])
+    keep_uncertainty_fishn<-rbind(keep_uncertainty_fishn,tmp)
+  }  
+  
+  
+}
+
 #==need a flag for the type of mortality to split for snow + tanner?
 #==plot snow and tanner together and then the kind crabs together?
 #==snow and tanner with recruitment and immature mortality; fishing and mature mortality?

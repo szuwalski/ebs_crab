@@ -26,6 +26,66 @@ outs_in<-list(list())
 for(x in 1:length(rep_files))
   outs_in[[x]]<-readList(paste(getwd(),rep_files[x],sep=""))
 
+#==get uncertainty in M estimates
+cor_files<-c("/models/snow/snow_down.cor",
+             "/models/tanner/tanner.cor")
+keep_uncertainty_m_ch<-NULL
+
+labs<-c("imm","mat")
+for(x in 1:length(cor_files))
+{
+  ttt<-readLines(paste(getwd(),cor_files[x],sep=""))
+  take_em<-grep('nat_m_dev',ttt)
+  take_em_mat<-grep('nat_m_mat_dev',ttt)
+  take_em_m<-grep('log_m_mu',ttt)
+  yrs<-seq(outs_in[[x]]$styr,outs_in[[x]]$endyr)
+  for(z in 1:2)
+  for(y in 1:length(take_em))
+  {
+    zzz<-unlist(strsplit(ttt[take_em[y]],split=' '))
+    if(z==2)
+     zzz<-unlist(strsplit(ttt[take_em_mat[y]],split=' '))
+    m_mu<-unlist(strsplit(ttt[take_em_m[z]],split=' '))
+    m_mu<-as.numeric(m_mu[nzchar(m_mu)][3])
+    tmp<-data.frame(stock=paste(species[x],"_",labs[z],sep=""),
+                    est_m=exp(m_mu+as.numeric(zzz[nzchar(zzz)][3])),
+                    up_m=exp(m_mu+as.numeric(zzz[nzchar(zzz)][3])+as.numeric(zzz[nzchar(zzz)][4])*1.96),
+                    dn_m=exp(m_mu+as.numeric(zzz[nzchar(zzz)][3])-as.numeric(zzz[nzchar(zzz)][4])*1.96),
+                    sd=as.numeric(zzz[nzchar(zzz)][4]),
+                    Year=yrs[y])
+    keep_uncertainty_m_ch<-rbind(keep_uncertainty_m_ch,tmp)
+  }
+  
+  take_em<-grep('total_population_n',ttt)
+  yrs<-seq(outs_in[[x]]$styr,outs_in[[x]]$endyr)
+  for(y in 1:length(take_em))
+  {
+    zzz<-unlist(strsplit(ttt[take_em[y]],split=' '))
+    tmp<-data.frame(stock=species[x],
+                    tot_n=as.numeric(zzz[nzchar(zzz)][3]),
+                    up_m=as.numeric(zzz[nzchar(zzz)][3])+as.numeric(zzz[nzchar(zzz)][4])*1.96,
+                    dn_m=as.numeric(zzz[nzchar(zzz)][3])-as.numeric(zzz[nzchar(zzz)][4])*1.96,
+                    sd=as.numeric(zzz[nzchar(zzz)][4]),
+                    Year=yrs[y])
+    keep_uncertainty_totn<-rbind(keep_uncertainty_totn,tmp)
+  }
+  
+  take_em<-grep('fished_population_n',ttt)
+  yrs<-seq(outs_in[[x]]$styr,outs_in[[x]]$endyr)
+  for(y in 1:length(take_em))
+  {
+    zzz<-unlist(strsplit(ttt[take_em[y]],split=' '))
+    tmp<-data.frame(stock=species[x],
+                    tot_n=as.numeric(zzz[nzchar(zzz)][3]),
+                    up_m=as.numeric(zzz[nzchar(zzz)][3])+as.numeric(zzz[nzchar(zzz)][4])*1.96,
+                    dn_m=as.numeric(zzz[nzchar(zzz)][3])-as.numeric(zzz[nzchar(zzz)][4])*1.96,
+                    sd=as.numeric(zzz[nzchar(zzz)][4]),
+                    Year=yrs[y])
+    keep_uncertainty_fishn<-rbind(keep_uncertainty_fishn,tmp)
+  }
+}
+
+
 #==need a flag for the type of mortality to split for snow + tanner?
 #==plot snow and tanner together and then the kind crabs together?
 #==snow and tanner with recruitment and immature mortality; fishing and mature mortality?
@@ -102,9 +162,9 @@ chion_proc_agg<-ggplot()+
         panel.border = element_blank(),
         panel.background = element_blank())
 
-png("plots/fig_agg_chion.png",height=8,width=5,res=400,units='in')
-print(chion_proc_agg)
-dev.off()
+# png("plots/fig_agg_chion.png",height=8,width=5,res=400,units='in')
+# print(chion_proc_agg)
+# dev.off()
 
 
 #==need to put the CVs in the .REP files and pull here
@@ -275,7 +335,8 @@ all_dat$species_process<-paste(all_dat$species,"_",substring(all_dat$process,1,1
 out_dat<-rbind(all_dat_kc,all_dat)
 write.csv(out_dat,"data/all_output.csv")
 
-
+unc_m_est<-rbind(keep_uncertainty_m,keep_uncertainty_m_ch)
+write.csv(unc_m_est,"data/uncertainty_mort.csv")
 
 #==============================================
 #==plot model fits
@@ -744,7 +805,23 @@ dev.off()
 
 dat_sel<-data.frame(value=c(outs_in[[y]]$'survey selectivity'[1,]),
                     sizes=rep(outs_in[[y]]$sizes),
-                    est=c(rep("Estimated",length(outs_in[[y]]$sizes))))
+                    est=c(rep("Estimated",length(outs_in[[y]]$sizes))),
+                    era=c(rep("1982-present",length(outs_in[[y]]$sizes))))
+
+if(y==2) # tanner
+{
+  dat_sel1<-data.frame(value=c(outs_in[[y]]$'survey selectivity'[1,]),
+                      sizes=rep(outs_in[[y]]$sizes),
+                      est=c(rep("Estimated",length(outs_in[[y]]$sizes))),
+                      era=c(rep("1975-1981",length(outs_in[[y]]$sizes)))) 
+  dat_sel2<-data.frame(value=c(outs_in[[y]]$'survey selectivity'[30,]),
+                       sizes=rep(outs_in[[y]]$sizes),
+                       est=c(rep("Estimated",length(outs_in[[y]]$sizes))),
+                       era=c(rep("1982-present",length(outs_in[[y]]$sizes))))   
+  dat_sel<-rbind(dat_sel1,dat_sel2)
+}
+
+
 fish_sel<-data.frame(value=c(outs_in[[y]]$ret_fish_sel[1,],outs_in[[y]]$total_fish_sel[1,]),
                      sizes=rep(outs_in[[y]]$sizes,2),
                      Fishery=c(rep("Retained",length(outs_in[[y]]$sizes)),rep("Total",length(outs_in[[y]]$sizes))))
@@ -756,7 +833,7 @@ molt<-melt(t_molt)
 colnames(molt)<-c("Year","Size","Probability")
 
 s_sel<-ggplot()+
-  geom_line(data=filter(dat_sel,est=="Estimated"),aes(x=sizes,y=value),col=2,lwd=2)+
+  geom_line(data=filter(dat_sel,est=="Estimated"),aes(x=sizes,y=value,col=era),lwd=2)+
   theme_bw()+ylab("Selectivity")+xlab("Carapace width (mm)")+
   annotate("text",x=75,y=0.9,label="Survey")+
   ylim(0,1)

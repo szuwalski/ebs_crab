@@ -97,7 +97,7 @@ PARAMETER_SECTION
   vector retain_fish_sel(1,size_n)
   vector surv_sel(1,size_n)
   vector pred_retained_n(styr,endyr)
-  vector pred_tot_n(styr,endyr)
+  sdreport_vector pred_tot_n(styr,endyr)
   matrix pred_retained_size_comp(styr,endyr,1,size_n)
   matrix pred_tot_size_comp(styr,endyr,1,size_n)
   
@@ -110,7 +110,7 @@ PARAMETER_SECTION
   vector temp_catch_n(1,size_n)
 
   vector sum_numbers_obs(styr,endyr)
-  vector numbers_pred(styr,endyr)
+  sdreport_vector numbers_pred(styr,endyr)
   vector sum_ret_numbers_obs(styr,endyr)
   vector sum_tot_numbers_obs(styr,endyr) 
   
@@ -133,6 +133,8 @@ PARAMETER_SECTION
     number smooth_init_like
   number f_prior
   
+    sdreport_vector total_population_n(styr,endyr)
+    sdreport_vector fished_population_n(styr,endyr)	
   vector temp_prop_rec(1,3)
   number tot_prop_rec
   
@@ -224,14 +226,17 @@ FUNCTION evaluate_the_objective_function
   sum_numbers_obs.initialize();
   pred_retained_n.initialize();
   pred_tot_n.initialize();
-
+  total_population_n.initialize();
+  fished_population_n.initialize(); 
   for (int year=styr;year<=endyr;year++)
    for (int size=1;size<=size_n;size++)
    {
+    total_population_n(year)+= n_size_pred(year,size);
     numbers_pred(year)    += selectivity(year,size)*n_size_pred(year,size);
 	sum_numbers_obs(year) += n_size_obs(year,size);
 	pred_retained_n(year) += pred_retained_size_comp(year,size);
 	pred_tot_n(year)      += pred_tot_size_comp(year,size);
+	fished_population_n(year)+=n_size_pred(year,size)*retain_fish_sel(size);
    }
    
   // likelihoods

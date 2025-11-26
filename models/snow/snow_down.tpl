@@ -131,6 +131,9 @@ PARAMETER_SECTION
   vector sum_ret_numbers_obs(styr,endyr)
   vector sum_disc_numbers_obs(styr,endyr) 
   
+  sdreport_vector total_population_n(styr,endyr)
+  sdreport_vector fished_population_n(styr,endyr) 
+   
   number imm_num_like
   number mat_num_like
   number ret_cat_like
@@ -309,7 +312,9 @@ FUNCTION evaluate_the_objective_function
   sum_mat_numbers_obs.initialize(); 
   pred_retained_n.initialize();
   pred_discard_n.initialize();
-
+  total_population_n.initialize();
+  fished_population_n.initialize();
+  
   for (int year=styr;year<=endyr;year++)
    for (int size=1;size<=size_n;size++)
    {
@@ -319,6 +324,8 @@ FUNCTION evaluate_the_objective_function
 	sum_mat_numbers_obs(year) += mat_n_size_obs(year,size);
 	pred_retained_n(year)     += pred_retained_size_comp(year,size);
 	pred_discard_n(year)      += pred_discard_size_comp(year,size);
+	total_population_n(year)  += imm_n_size_pred(year,size)+mat_n_size_pred(year,size);
+	fished_population_n(year)  += retain_fish_sel(year,size)*imm_n_size_pred(year,size)+retain_fish_sel(year,size)*mat_n_size_pred(year,size);
 	   }
    
 
