@@ -152,6 +152,8 @@ private:
   param_vector mat_numbers_pred;
   param_vector sum_ret_numbers_obs;
   param_vector sum_disc_numbers_obs;
+  param_stddev_vector total_population_n;
+  param_stddev_vector fished_population_n;
   param_number imm_num_like;
   param_number mat_num_like;
   param_number ret_cat_like;

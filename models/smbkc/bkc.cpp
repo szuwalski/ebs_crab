@@ -123,11 +123,11 @@ model_parameters::model_parameters(int sz,int argc,char * argv[]) :
   sigma_q.allocate(1,2,0.01,4,est_sigma_q,"sigma_q");
   log_f.allocate(-5,5,"log_f");
   f_dev.allocate(1,ret_cat_yr_n,-5,5,"f_dev");
-  fish_ret_sel_50.allocate(25,150,"fish_ret_sel_50");
+  fish_ret_sel_50.allocate(25,170,"fish_ret_sel_50");
   fish_ret_sel_slope.allocate(0.0001,20,"fish_ret_sel_slope");
-  fish_tot_sel_50.allocate(25,150,"fish_tot_sel_50");
+  fish_tot_sel_50.allocate(25,170,"fish_tot_sel_50");
   fish_tot_sel_slope.allocate(0.0001,20,"fish_tot_sel_slope");
-  surv_sel_50.allocate(25,150,"surv_sel_50");
+  surv_sel_50.allocate(25,170,"surv_sel_50");
   surv_sel_slope.allocate(0.0001,20,"surv_sel_slope");
   molt_sel_50.allocate(25,150,"molt_sel_50");
   molt_sel_slope.allocate(0.0001,20,"molt_sel_slope");
@@ -160,9 +160,6 @@ model_parameters::model_parameters(int sz,int argc,char * argv[]) :
     pred_retained_n.initialize();
   #endif
   pred_tot_n.allocate(styr,endyr,"pred_tot_n");
-  #ifndef NO_AD_INITIALIZE
-    pred_tot_n.initialize();
-  #endif
   pred_retained_size_comp.allocate(styr,endyr,1,size_n,"pred_retained_size_comp");
   #ifndef NO_AD_INITIALIZE
     pred_retained_size_comp.initialize();
@@ -200,9 +197,6 @@ model_parameters::model_parameters(int sz,int argc,char * argv[]) :
     sum_numbers_obs.initialize();
   #endif
   numbers_pred.allocate(styr,endyr,"numbers_pred");
-  #ifndef NO_AD_INITIALIZE
-    numbers_pred.initialize();
-  #endif
   sum_ret_numbers_obs.allocate(styr,endyr,"sum_ret_numbers_obs");
   #ifndef NO_AD_INITIALIZE
     sum_ret_numbers_obs.initialize();
@@ -275,6 +269,8 @@ model_parameters::model_parameters(int sz,int argc,char * argv[]) :
   #ifndef NO_AD_INITIALIZE
   f_prior.initialize();
   #endif
+  total_population_n.allocate(styr,endyr,"total_population_n");
+  fished_population_n.allocate(styr,endyr,"fished_population_n");
   temp_prop_rec.allocate(1,3,"temp_prop_rec");
   #ifndef NO_AD_INITIALIZE
     temp_prop_rec.initialize();
@@ -358,13 +354,17 @@ void model_parameters::evaluate_the_objective_function(void)
   sum_numbers_obs.initialize();
   pred_retained_n.initialize();
   pred_tot_n.initialize();
+  total_population_n.initialize();
+  fished_population_n.initialize(); 
   for (int year=styr;year<=endyr;year++)
    for (int size=1;size<=size_n;size++)
    {
+    total_population_n(year)+= n_size_pred(year,size);
     numbers_pred(year)    += selectivity(year,size)*n_size_pred(year,size);
 	sum_numbers_obs(year) += n_size_obs(year,size);
 	pred_retained_n(year) += pred_retained_size_comp(year,size);
 	pred_tot_n(year)      += pred_tot_size_comp(year,size);
+	fished_population_n(year)+= n_size_pred(year,size)*retain_fish_sel(size);
    }
   // likelihoods
   num_like = 0;

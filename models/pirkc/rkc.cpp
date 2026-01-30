@@ -72,6 +72,7 @@ model_data::model_data(int argc,char * argv[]) : ad_comm(argc,argv)
   smooth_f_weight.allocate("smooth_f_weight");
   surv_sel_cv.allocate("surv_sel_cv");
   smooth_surv_weight.allocate("smooth_surv_weight");
+  smooth_init_weight.allocate("smooth_init_weight");
   est_molt.allocate("est_molt");
 cout<<"n_obs"<<n_obs<<endl; 
 cout<<"est_m_devs"<<est_m_devs<<endl;
@@ -116,12 +117,12 @@ model_parameters::model_parameters(int sz,int argc,char * argv[]) :
   nat_m_dev.allocate(styr,endyr,-4,4,est_m_devs,"nat_m_dev");
   q_dev.allocate(styr,endyr,-0.2,0.2,est_q_devs,"q_dev");
   log_avg_rec.allocate(1,40,"log_avg_rec");
-  rec_devs.allocate(styr,endyr,-10,10,1,"rec_devs");
+  rec_devs.allocate(styr,endyr,-12,12,1,"rec_devs");
   sigma_m.allocate(0.01,4,est_sigma_m,"sigma_m");
   log_m_mu.allocate(-5,3,est_log_m_mu,"log_m_mu");
   prop_rec.allocate(1,2,0.00001,200,"prop_rec");
   sigma_q.allocate(1,2,0.01,4,est_sigma_q,"sigma_q");
-  log_f.allocate(-5,5,"log_f");
+  log_f.allocate(-10,5,"log_f");
   f_dev.allocate(1,ret_cat_yr_n,-5,5,"f_dev");
   fish_ret_sel_50.allocate(25,150,-1,"fish_ret_sel_50");
   fish_ret_sel_slope.allocate(0.0001,20,-1,"fish_ret_sel_slope");
@@ -160,9 +161,6 @@ model_parameters::model_parameters(int sz,int argc,char * argv[]) :
     pred_retained_n.initialize();
   #endif
   pred_tot_n.allocate(styr,endyr,"pred_tot_n");
-  #ifndef NO_AD_INITIALIZE
-    pred_tot_n.initialize();
-  #endif
   pred_retained_size_comp.allocate(styr,endyr,1,size_n,"pred_retained_size_comp");
   #ifndef NO_AD_INITIALIZE
     pred_retained_size_comp.initialize();
@@ -200,9 +198,6 @@ model_parameters::model_parameters(int sz,int argc,char * argv[]) :
     sum_numbers_obs.initialize();
   #endif
   numbers_pred.allocate(styr,endyr,"numbers_pred");
-  #ifndef NO_AD_INITIALIZE
-    numbers_pred.initialize();
-  #endif
   sum_ret_numbers_obs.allocate(styr,endyr,"sum_ret_numbers_obs");
   #ifndef NO_AD_INITIALIZE
     sum_ret_numbers_obs.initialize();
@@ -271,10 +266,16 @@ model_parameters::model_parameters(int sz,int argc,char * argv[]) :
   #ifndef NO_AD_INITIALIZE
   smooth_surv_like.initialize();
   #endif
+  smooth_init_like.allocate("smooth_init_like");
+  #ifndef NO_AD_INITIALIZE
+  smooth_init_like.initialize();
+  #endif
   f_prior.allocate("f_prior");
   #ifndef NO_AD_INITIALIZE
   f_prior.initialize();
   #endif
+  total_population_n.allocate(styr,endyr,"total_population_n");
+  fished_population_n.allocate(styr,endyr,"fished_population_n");
   temp_prop_rec.allocate(1,3,"temp_prop_rec");
   #ifndef NO_AD_INITIALIZE
     temp_prop_rec.initialize();
@@ -358,13 +359,17 @@ void model_parameters::evaluate_the_objective_function(void)
   sum_numbers_obs.initialize();
   pred_retained_n.initialize();
   pred_tot_n.initialize();
+  total_population_n.initialize();
+  fished_population_n.initialize(); 
   for (int year=styr;year<=endyr;year++)
    for (int size=1;size<=size_n;size++)
    {
+    total_population_n(year)+= n_size_pred(year,size);
     numbers_pred(year)    += selectivity(year,size)*n_size_pred(year,size);
 	sum_numbers_obs(year) += n_size_obs(year,size);
 	pred_retained_n(year) += pred_retained_size_comp(year,size);
 	pred_tot_n(year)      += pred_tot_size_comp(year,size);
+	fished_population_n(year)+=n_size_pred(year,size)*retain_fish_sel(size);
    }
   // likelihoods
   num_like = 0;
@@ -382,14 +387,14 @@ void model_parameters::evaluate_the_objective_function(void)
   surv_sc_like = 0;
   for (int year=styr;year<=endyr;year++)
    for (int size=1;size<=size_n;size++)
-    if (n_size_obs(year,size) >0.001 & n_size_pred(year,size) >0.001)
+    if (n_size_obs(year,size) >0.01 & n_size_pred(year,size) >0.01)
      surv_sc_like += sc_eff_samp*(n_size_obs(year,size)/sum_numbers_obs(year)) * log( (selectivity(year,size)*n_size_pred(year,size)/numbers_pred(year)) / (n_size_obs(year,size)/sum_numbers_obs(year)));
   surv_sc_like = -1*surv_sc_like;
   // retained catch at size data
   ret_comp_like = 0;
   for (int year=1;year<=ret_sc_yr_n;year++)
    for (int size=1;size<=size_n;size++)
-    if (ret_cat_size(year,size) >0.001 & pred_retained_size_comp(ret_sc_yrs(year),size) >0.001)
+    if (ret_cat_size(year,size) >0.01 & pred_retained_size_comp(ret_sc_yrs(year),size) >0.01)
      ret_comp_like += ret_eff_samp*(ret_cat_size(year,size)) * log( (pred_retained_size_comp(ret_sc_yrs(year),size)/pred_retained_n(ret_sc_yrs(year))) / (ret_cat_size(year,size)));
   ret_comp_like = -1*ret_comp_like;
   // total catch at size data
@@ -426,13 +431,15 @@ void model_parameters::evaluate_the_objective_function(void)
   smooth_f_like = smooth_f_weight* (norm2(first_difference(first_difference(f_dev))));
   smooth_surv_like = 0;
   smooth_surv_like = smooth_surv_weight* (norm2(first_difference(first_difference(surv_sel))));
+  smooth_init_like = 0;
+  smooth_init_like = smooth_init_weight* (norm2(first_difference(first_difference(log_n_init))));
   f = num_like +  ret_cat_like + tot_cat_like + surv_sc_like + ret_comp_like + tot_comp_like + 
   nat_m_like +  nat_m_mu_like +  smooth_q_like + smooth_m_like + q_like +  smooth_f_like +
-  surv_sel_prior + smooth_surv_like + f_prior;
+  surv_sel_prior + smooth_surv_like + f_prior + smooth_init_like;
   cout<<num_like<< " "  << surv_sc_like << " " <<endl;
   cout<<ret_cat_like<< " " << ret_cat_like << " " << ret_comp_like << " " << tot_comp_like << " " <<endl;
   cout<<nat_m_like<< " " << tot_cat_like << " " << nat_m_mu_like << " "  <<endl;
-  cout<<smooth_q_like<< " " << smooth_m_like << " " << q_like << " "  <<smooth_f_like<<" " << surv_sel_prior<<" "<<f_prior<<" "<<endl;
+  cout<<smooth_q_like<< " " << smooth_m_like << " " << q_like << " "  <<smooth_f_like<<" " << surv_sel_prior<<" "<<f_prior<<" "<<smooth_init_like<<" "<<endl;
 }
 
 void model_parameters::report(const dvector& gradients)

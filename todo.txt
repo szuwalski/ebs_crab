@@ -1,0 +1,23 @@
+RTMB models
+
+Shiny app for displaying results and projections with different drivers and HCRs
+	Pages:  data and models fits
+		estimated population processes
+		fits to recruitment and mortality
+		environmental relationships
+		menu for decisions for projections
+			drivers, assumptions, HCR values
+		projection outcomes
+	
+projection models for all...consolidate the red king crab models
+
+recruitment models
+	covariates
+	AR
+	periods
+
+crabpack + ADFG catch files so models can be updated with a push of a button
+
+think about how to incorporate drivers into HCR
+
+talk about how to present how one could predict mortality between survey and fishery?

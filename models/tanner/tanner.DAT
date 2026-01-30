@@ -235,7 +235,7 @@
 # smooth_f_weight																																								
 0.0001	
 # survey_sel_cv
-0.001	
+0.01	
 # survey_sel_cv_2
 0.05
 # smooth_surv_weight

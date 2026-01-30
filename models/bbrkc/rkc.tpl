@@ -33,6 +33,7 @@ DATA_SECTION
    !!cout<<"est_m_devs"<<est_m_devs<<endl;
    !!cout<<"sigma_m_mu"<<sigma_m_mu<<endl;
    !!cout<<"smooth_m_weight"<<smooth_m_weight<<endl;
+      !!cout<<"smooth_f_weight"<<smooth_f_weight<<endl;
    !!cout<<"sigma_numbers"<<sigma_numbers<<endl;
 
  //==read in catch data
@@ -85,8 +86,8 @@ PARAMETER_SECTION
   init_bounded_number surv_sel_50(25,150)
   init_bounded_number surv_sel_slope(0.0001,20) 
   
-  init_bounded_number molt_sel_50(25,150)
-  init_bounded_number molt_sel_slope(0.0001,20) 
+  init_bounded_number molt_sel_50(25,150,est_molt)
+  init_bounded_number molt_sel_slope(0.0001,20,est_molt) 
   
   matrix n_size_pred(styr,endyr,1,size_n)
   matrix nat_m(styr,endyr,1,size_n)
@@ -258,7 +259,7 @@ FUNCTION evaluate_the_objective_function
   surv_sc_like = 0;
   for (int year=styr;year<=endyr;year++)
    for (int size=1;size<=size_n;size++)
-    if (n_size_obs(year,size) >0.001 & n_size_pred(year,size) >0.001)
+    if (n_size_obs(year,size) >0.001 & n_size_pred(year,size) >0.001 & year!=2020)
      surv_sc_like += sc_eff_samp*(n_size_obs(year,size)/sum_numbers_obs(year)) * log( (selectivity(year,size)*n_size_pred(year,size)/numbers_pred(year)) / (n_size_obs(year,size)/sum_numbers_obs(year)));
   surv_sc_like = -1*surv_sc_like;
   

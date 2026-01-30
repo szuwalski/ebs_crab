@@ -77,6 +77,7 @@ cout<<"n_obs"<<n_obs<<endl;
 cout<<"est_m_devs"<<est_m_devs<<endl;
 cout<<"sigma_m_mu"<<sigma_m_mu<<endl;
 cout<<"smooth_m_weight"<<smooth_m_weight<<endl;
+cout<<"smooth_f_weight"<<smooth_f_weight<<endl;
 cout<<"sigma_numbers"<<sigma_numbers<<endl;
  ad_comm::change_datafile_name("catch_dat.DAT");
   ret_cat_yr_n.allocate("ret_cat_yr_n");
@@ -129,8 +130,8 @@ model_parameters::model_parameters(int sz,int argc,char * argv[]) :
   fish_tot_sel_slope.allocate(0.0001,20,"fish_tot_sel_slope");
   surv_sel_50.allocate(25,150,"surv_sel_50");
   surv_sel_slope.allocate(0.0001,20,"surv_sel_slope");
-  molt_sel_50.allocate(25,150,"molt_sel_50");
-  molt_sel_slope.allocate(0.0001,20,"molt_sel_slope");
+  molt_sel_50.allocate(25,150,est_molt,"molt_sel_50");
+  molt_sel_slope.allocate(0.0001,20,est_molt,"molt_sel_slope");
   n_size_pred.allocate(styr,endyr,1,size_n,"n_size_pred");
   #ifndef NO_AD_INITIALIZE
     n_size_pred.initialize();
@@ -160,9 +161,6 @@ model_parameters::model_parameters(int sz,int argc,char * argv[]) :
     pred_retained_n.initialize();
   #endif
   pred_tot_n.allocate(styr,endyr,"pred_tot_n");
-  #ifndef NO_AD_INITIALIZE
-    pred_tot_n.initialize();
-  #endif
   pred_retained_size_comp.allocate(styr,endyr,1,size_n,"pred_retained_size_comp");
   #ifndef NO_AD_INITIALIZE
     pred_retained_size_comp.initialize();
@@ -200,9 +198,6 @@ model_parameters::model_parameters(int sz,int argc,char * argv[]) :
     sum_numbers_obs.initialize();
   #endif
   numbers_pred.allocate(styr,endyr,"numbers_pred");
-  #ifndef NO_AD_INITIALIZE
-    numbers_pred.initialize();
-  #endif
   sum_ret_numbers_obs.allocate(styr,endyr,"sum_ret_numbers_obs");
   #ifndef NO_AD_INITIALIZE
     sum_ret_numbers_obs.initialize();
@@ -211,6 +206,8 @@ model_parameters::model_parameters(int sz,int argc,char * argv[]) :
   #ifndef NO_AD_INITIALIZE
     sum_tot_numbers_obs.initialize();
   #endif
+  total_population_n.allocate(styr,endyr,"total_population_n");
+  fished_population_n.allocate(styr,endyr,"fished_population_n");
   num_like.allocate("num_like");
   #ifndef NO_AD_INITIALIZE
   num_like.initialize();
@@ -358,13 +355,17 @@ void model_parameters::evaluate_the_objective_function(void)
   sum_numbers_obs.initialize();
   pred_retained_n.initialize();
   pred_tot_n.initialize();
+  total_population_n.initialize();
+  fished_population_n.initialize();
   for (int year=styr;year<=endyr;year++)
    for (int size=1;size<=size_n;size++)
    {
-    numbers_pred(year)    += selectivity(year,size)*n_size_pred(year,size);
-	sum_numbers_obs(year) += n_size_obs(year,size);
-	pred_retained_n(year) += pred_retained_size_comp(year,size);
-	pred_tot_n(year)      += pred_tot_size_comp(year,size);
+    total_population_n(year)+= n_size_pred(year,size);
+	numbers_pred(year)    	+= selectivity(year,size)*n_size_pred(year,size);
+	sum_numbers_obs(year) 	+= n_size_obs(year,size);
+	pred_retained_n(year) 	+= pred_retained_size_comp(year,size);
+	pred_tot_n(year)      	+= pred_tot_size_comp(year,size);
+	fished_population_n(year)+=n_size_pred(year,size)*retain_fish_sel(size);
    }
   // likelihoods
   num_like = 0;
@@ -378,11 +379,11 @@ void model_parameters::evaluate_the_objective_function(void)
   tot_cat_like = 0;
   for (int year=1;year<=tot_cat_yr_n;year++)
     tot_cat_like += square( log(pred_tot_n(tot_cat_yrs(year))) - log(tot_cat_numbers(year))) / (2.0 * square(sigma_numbers_tot));
-  // immature numbers at size data
+  //  numbers at size data
   surv_sc_like = 0;
   for (int year=styr;year<=endyr;year++)
    for (int size=1;size<=size_n;size++)
-    if (n_size_obs(year,size) >0.001 & n_size_pred(year,size) >0.001)
+    if (n_size_obs(year,size) >0.001 & n_size_pred(year,size) >0.001 & year!=2020)
      surv_sc_like += sc_eff_samp*(n_size_obs(year,size)/sum_numbers_obs(year)) * log( (selectivity(year,size)*n_size_pred(year,size)/numbers_pred(year)) / (n_size_obs(year,size)/sum_numbers_obs(year)));
   surv_sc_like = -1*surv_sc_like;
   // retained catch at size data

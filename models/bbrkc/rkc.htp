@@ -120,7 +120,7 @@ private:
   param_vector retain_fish_sel;
   param_vector surv_sel;
   param_vector pred_retained_n;
-  param_vector pred_tot_n;
+  param_stddev_vector pred_tot_n;
   param_matrix pred_retained_size_comp;
   param_matrix pred_tot_size_comp;
   param_vector f_mort;
@@ -130,9 +130,11 @@ private:
   param_vector trans_n;
   param_vector temp_catch_n;
   param_vector sum_numbers_obs;
-  param_vector numbers_pred;
+  param_stddev_vector numbers_pred;
   param_vector sum_ret_numbers_obs;
   param_vector sum_tot_numbers_obs;
+  param_stddev_vector total_population_n;
+  param_stddev_vector fished_population_n;
   param_number num_like;
   param_number ret_cat_like;
   param_number tot_cat_like;

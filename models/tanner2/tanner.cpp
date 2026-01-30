@@ -139,12 +139,8 @@ model_parameters::model_parameters(int sz,int argc,char * argv[]) :
   fish_ret_sel_slope.allocate(0.0001,20,"fish_ret_sel_slope");
   fish_ret_sel_slope_post.allocate(0.0001,20,"fish_ret_sel_slope_post");
   fish_tot_sel_slope.allocate(0.0001,20,"fish_tot_sel_slope");
-  surv_q.allocate(0,1,est_sel,"surv_q");
-  surv_slope.allocate(0.0001,20,est_sel,"surv_slope");
-  surv_50.allocate(25,150,est_sel,"surv_50");
-  surv_q_75.allocate(0,1,est_sel,"surv_q_75");
-  surv_slope_75.allocate(0.0001,20,est_sel,"surv_slope_75");
-  surv_50_75.allocate(25,150,est_sel,"surv_50_75");
+  est_sel_par.allocate(1,size_n,0,1,1,"est_sel_par");
+  est_sel_par2.allocate(1,size_n,0,1,1,"est_sel_par2");
   imm_n_size_pred.allocate(styr,endyr,1,size_n,"imm_n_size_pred");
   #ifndef NO_AD_INITIALIZE
     imm_n_size_pred.initialize();
@@ -182,9 +178,6 @@ model_parameters::model_parameters(int sz,int argc,char * argv[]) :
     pred_retained_n.initialize();
   #endif
   pred_tot_n.allocate(styr,endyr,"pred_tot_n");
-  #ifndef NO_AD_INITIALIZE
-    pred_tot_n.initialize();
-  #endif
   pred_retained_size_comp.allocate(styr,endyr,1,size_n,"pred_retained_size_comp");
   #ifndef NO_AD_INITIALIZE
     pred_retained_size_comp.initialize();
@@ -217,13 +210,9 @@ model_parameters::model_parameters(int sz,int argc,char * argv[]) :
   #ifndef NO_AD_INITIALIZE
     temp_catch_mat.initialize();
   #endif
-  surv_sel.allocate(1,size_n,"surv_sel");
+  surv_sel.allocate(styr,endyr,1,size_n,"surv_sel");
   #ifndef NO_AD_INITIALIZE
     surv_sel.initialize();
-  #endif
-  surv_sel_75.allocate(1,size_n,"surv_sel_75");
-  #ifndef NO_AD_INITIALIZE
-    surv_sel_75.initialize();
   #endif
   sum_imm_numbers_obs.allocate(styr,endyr,"sum_imm_numbers_obs");
   #ifndef NO_AD_INITIALIZE
@@ -234,13 +223,7 @@ model_parameters::model_parameters(int sz,int argc,char * argv[]) :
     sum_mat_numbers_obs.initialize();
   #endif
   imm_numbers_pred.allocate(styr,endyr,"imm_numbers_pred");
-  #ifndef NO_AD_INITIALIZE
-    imm_numbers_pred.initialize();
-  #endif
   mat_numbers_pred.allocate(styr,endyr,"mat_numbers_pred");
-  #ifndef NO_AD_INITIALIZE
-    mat_numbers_pred.initialize();
-  #endif
   sum_ret_numbers_obs.allocate(styr,endyr,"sum_ret_numbers_obs");
   #ifndef NO_AD_INITIALIZE
     sum_ret_numbers_obs.initialize();
@@ -341,6 +324,10 @@ model_parameters::model_parameters(int sz,int argc,char * argv[]) :
   #ifndef NO_AD_INITIALIZE
   f_prior.initialize();
   #endif
+  surv_q_penalty.allocate("surv_q_penalty");
+  #ifndef NO_AD_INITIALIZE
+  surv_q_penalty.initialize();
+  #endif
   temp_prop_rec.allocate(1,3,"temp_prop_rec");
   #ifndef NO_AD_INITIALIZE
     temp_prop_rec.initialize();
@@ -362,9 +349,6 @@ void model_parameters::userfunction(void)
   {
    imm_n_size_pred(styr,size) = exp(log_n_imm(size));
    mat_n_size_pred(styr,size) = exp(log_n_mat(size));
-   surv_sel(size) = surv_q / (1 + exp(-surv_slope*(sizes(size)-surv_50)))  ;
-   surv_sel_75(size) = surv_q_75 / (1 + exp(-surv_slope_75*(sizes(size)-surv_50_75)))  ;
-  // surv_sel(size) = (surv_omega / (1 + exp(-surv_alpha1*(sizes(size)-surv_beta1))) ) + ( (1-surv_omega)/(1+exp(-surv_alpha2*(sizes(size)-surv_beta2)))  );
    }
   for(int year=styr;year<=endyr;year++)
   for(int size=1;size<=size_n;size++)
@@ -374,7 +358,17 @@ void model_parameters::userfunction(void)
 	 retain_fish_sel(year,size) = 1 / (1+exp(-fish_ret_sel_slope_post*(sizes(size)-fish_ret_sel_50_post)));
 	if(year<=2004)
      retain_fish_sel(year,size) = 1 / (1+exp(-fish_ret_sel_slope*(sizes(size)-fish_ret_sel_50)));
+	 //surv_sel(year,size) = surv_q / (1 + exp(-surv_slope*(sizes(size)-surv_50)))  ;
+    // surv_sel(year,size) = surv_q * ((surv_omega / (1 + exp(-surv_alpha1*(sizes(size)-surv_beta1))) ) + ( (1-surv_omega)/(1+exp(-surv_alpha2*(sizes(size)-surv_beta2)))  ));
+    surv_sel(year,size) = est_sel_par(size);
    }	  
+  for(int year=1975;year<=1981;year++)
+	for(int size=1;size<=size_n;size++)
+	{
+	  //surv_sel(year,size) = surv_q_2 / (1 + exp(-surv_slope_2*(sizes(size)-surv_50_2)))  ;  
+      //surv_sel(year,size) = surv_q_2 *( (surv_omega_2 / (1 + exp(-surv_alpha1_2*(sizes(size)-surv_beta1_2))) ) + ( (1-surv_omega_2)/(1+exp(-surv_alpha2_2*(sizes(size)-surv_beta2_2)))  ));
+    surv_sel(year,size) = est_sel_par2(size);
+	}
  // for(int year=1;year<=ret_cat_size_yr_n;year++)
    //for(int size=1;size<=size_n;size++)
    	//total_fish_sel(ret_cat_size_yrs(year),size) = 1 / (1+exp(-fish_tot_sel_slope*(sizes(size)-(fish_ret_sel_50-fish_tot_sel_offset(year))))) ; 
@@ -385,20 +379,11 @@ void model_parameters::userfunction(void)
   {
   nat_m(year,size) = log_m_mu(1) + nat_m_dev(year);
   nat_m_mat(year,size) = log_m_mu(2) + nat_m_dev(year);
-  if(year>1981) 
-  {
-  selectivity(year,size) = surv_sel(size) + q_dev(year);
-  selectivity_mat(year,size) = surv_sel(size) + q_dev(year);
+  selectivity(year,size) = surv_sel(year,size) + q_dev(year);
+  selectivity_mat(year,size) = surv_sel(year,size) + q_dev(year);
+  //==option for estimating separate devs by maturity state
   if(est_q_mat_devs>0)
-   selectivity_mat(year,size) = surv_sel(size) + q_mat_dev(year); 
-  }
-  if(year<1982) 
-  {
-  selectivity(year,size) = surv_sel_75(size) + q_dev(year);
-  selectivity_mat(year,size) = surv_sel_75(size) + q_dev(year);
-  if(est_q_mat_devs>0)
-   selectivity_mat(year,size) = surv_sel_75(size) + q_mat_dev(year); 
-  }
+   selectivity_mat(year,size) = surv_sel(year,size) + q_mat_dev(year);  
   if(est_m_mat_devs>0)
    nat_m_mat(year,size) = log_m_mu(2) + nat_m_mat_dev(year);
   if(est_m_lg_devs>0 & size > 13)
@@ -530,12 +515,12 @@ void model_parameters::evaluate_the_objective_function(void)
   nat_m_mat_mu_like =0;
   nat_m_mat_mu_like += pow(((log_m_mu(2))-(log_mu_m_prior(2)))/ (sqrt(2)*sqrt(sigma_m_mu(2))),2.0); 
   surv_sel_prior.initialize();
-  if(current_phase()==est_sel)
+  if(current_phase()>=est_sel)
   {
   for (int size=1;size<14;size++)
-   surv_sel_prior +=  pow(((survey_sel(size))-(surv_sel(size)))/ (sqrt(2)*sqrt(surv_sel_cv)),2.0); 
+   surv_sel_prior +=  pow(((survey_sel(size))-(surv_sel(1989,size)))/ (sqrt(2)*sqrt(surv_sel_cv)),2.0); 
   for (int size=14;size<=size_n;size++)
-   surv_sel_prior +=  pow(((survey_sel(size))-(surv_sel(size)))/ (sqrt(2)*sqrt(surv_sel_cv_2)),2.0); 
+   surv_sel_prior +=  pow(((survey_sel(size))-(surv_sel(1989,size)))/ (sqrt(2)*sqrt(surv_sel_cv_2)),2.0); 
   }
   f_prior.initialize();
   for (int year=styr;year<=endyr;year++)
@@ -559,10 +544,10 @@ void model_parameters::evaluate_the_objective_function(void)
   {
   q_like =0;
   for (int year=styr;year<=endyr;year++)
-   q_like += pow((selectivity(year,4)-surv_sel(4))/ (sqrt(2)*sqrt(sigma_q(1))),2.0);
+   q_like += pow((selectivity(year,4)-surv_sel(1989,4))/ (sqrt(2)*sqrt(sigma_q(1))),2.0);
   q_mat_like =0;
   for (int year=styr;year<=endyr;year++)
-   q_mat_like += pow((selectivity_mat(year,4)-surv_sel(4))/ (sqrt(2)*sqrt(sigma_q(2))),2.0);
+   q_mat_like += pow((selectivity_mat(year,4)-surv_sel(1989,4))/ (sqrt(2)*sqrt(sigma_q(2))),2.0);
   }
   smooth_q_like = 0;
   smooth_q_like = smooth_q_weight* (norm2(first_difference(first_difference(q_dev))) +norm2(first_difference(first_difference(q_mat_dev)))) ;
@@ -574,10 +559,11 @@ void model_parameters::evaluate_the_objective_function(void)
   smooth_f_like = 0;
   smooth_f_like = smooth_f_weight* (norm2(first_difference(first_difference(f_dev))));
   smooth_surv_like = 0;
-  //smooth_surv_like = smooth_surv_weight* (norm2(first_difference(first_difference(surv_sel))));
+  smooth_surv_like = smooth_surv_weight* (norm2(first_difference(first_difference(est_sel_par))));
+  smooth_surv_like += smooth_surv_weight* (norm2(first_difference(first_difference(est_sel_par2))));
   f = imm_num_like + mat_num_like + ret_cat_like + tot_cat_like + imm_like + mat_like + ret_comp_like + tot_comp_like + 
   nat_m_like + nat_m_mat_like + nat_m_lg_like + nat_m_mu_like + nat_m_mat_mu_like + smooth_q_like + smooth_m_like + q_like + q_mat_like + smooth_f_like +
-  surv_sel_prior + smooth_surv_like + f_prior;
+  surv_sel_prior + smooth_surv_like + f_prior + surv_q_penalty;
   cout<<imm_num_like<< " " << mat_num_like << " " << imm_like << " " << mat_like << " " <<endl;
   cout<<ret_cat_like<< " " << ret_cat_like << " " << ret_comp_like << " " << tot_comp_like << " " <<endl;
   cout<<nat_m_like<< " " << tot_cat_like << " " << nat_m_lg_like << " " << nat_m_mu_like << " " << nat_m_mat_mu_like << " " <<endl;
@@ -623,6 +609,16 @@ void model_parameters::report(const dvector& gradients)
   {
     report << (elem_prod(selectivity_mat(i),mat_n_size_pred(i)))/mat_numbers_pred(i)<<endl;
   }
+  report <<"$obs_imm_n_size" << endl;
+  for(int i=styr; i<=endyr; i++)
+  {
+    report << imm_n_size_obs(i)<<endl;
+  }
+  report <<"$obs_mat_n_size" << endl;
+  for(int i=styr; i<=endyr; i++)
+  {
+    report << mat_n_size_obs(i)<<endl;
+  }
   report<<"$styr"<<endl;
   report<<styr<<endl;
   report<<"$endyr"<<endl;
@@ -635,16 +631,16 @@ void model_parameters::report(const dvector& gradients)
   report<<imm_n_obs<<endl;
   report<<"$mat_n_obs"<<endl;
   report<<mat_n_obs<<endl;
-  report<<"$survey_sel_input"<<endl;
-  report<<surv_sel<<endl;
+  //report<<"$survey_sel_input"<<endl;
+  //report<<surv_sel<<endl;
   report<<"$ret_fish_sel"<<endl;
   for(int i=styr; i<=endyr; i++)
   report<<retain_fish_sel(i)<<endl;
   report<<"$total_fish_sel"<<endl;
   for(int i=styr; i<=endyr; i++)
   report<<total_fish_sel(i)<<endl;  
-  report<<"$surv_sel"<<endl;
-  report<<surv_sel<<endl;  
+  //report<<"$surv_sel"<<endl;
+  //report<<surv_sel<<endl;  
   report <<"$est_fishing_mort" << endl;
   for(int i=styr; i<=endyr; i++)
   {
@@ -722,6 +718,20 @@ void model_parameters::report(const dvector& gradients)
   {
     report << (use_term_molt(i))<<endl;
   }
+   report <<"$sizes" << endl;
+  report << sizes << endl;	 
+  report <<"$imm_cv" << endl;
+  report << sigma_numbers_imm << endl;	
+  report <<"$mat_cv" << endl;
+  report << sigma_numbers_mat << endl;	
+  report <<"$ret_cat_yrs" << endl;
+  report << ret_cat_yrs << endl;	
+  report <<"$tot_cat_yrs" << endl;
+  report << tot_cat_yrs << endl;	
+  report <<"$ret_cat_size_yrs" << endl;
+  report << ret_cat_size_yrs << endl;	
+  report <<"$tot_cat_size_yrs" << endl;
+  report << tot_cat_size_yrs << endl;	
     save_gradients(gradients);
 }
 

@@ -124,12 +124,8 @@ private:
   param_init_bounded_number fish_ret_sel_slope;
   param_init_bounded_number fish_ret_sel_slope_post;
   param_init_bounded_number fish_tot_sel_slope;
-  param_init_bounded_number surv_q;
-  param_init_bounded_number surv_slope;
-  param_init_bounded_number surv_50;
-  param_init_bounded_number surv_q_75;
-  param_init_bounded_number surv_slope_75;
-  param_init_bounded_number surv_50_75;
+  param_init_bounded_vector est_sel_par;
+  param_init_bounded_vector est_sel_par2;
   param_matrix imm_n_size_pred;
   param_matrix mat_n_size_pred;
   param_matrix nat_m;
@@ -139,7 +135,7 @@ private:
   param_matrix total_fish_sel;
   param_matrix retain_fish_sel;
   param_vector pred_retained_n;
-  param_vector pred_tot_n;
+  param_stddev_vector pred_tot_n;
   param_matrix pred_retained_size_comp;
   param_matrix pred_tot_size_comp;
   param_vector f_mort;
@@ -148,12 +144,11 @@ private:
   param_vector trans_imm;
   param_vector temp_catch_imm;
   param_vector temp_catch_mat;
-  param_vector surv_sel;
-  param_vector surv_sel_75;
+  param_matrix surv_sel;
   param_vector sum_imm_numbers_obs;
   param_vector sum_mat_numbers_obs;
-  param_vector imm_numbers_pred;
-  param_vector mat_numbers_pred;
+  param_stddev_vector imm_numbers_pred;
+  param_stddev_vector mat_numbers_pred;
   param_vector sum_ret_numbers_obs;
   param_vector sum_tot_numbers_obs;
   param_number imm_num_like;
@@ -179,6 +174,7 @@ private:
   param_number surv_sel_prior;
   param_number smooth_surv_like;
   param_number f_prior;
+  param_number surv_q_penalty;
   param_vector temp_prop_rec;
   param_number tot_prop_rec;
   param_number prior_function_value;

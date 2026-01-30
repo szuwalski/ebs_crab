@@ -242,6 +242,8 @@ model_parameters::model_parameters(int sz,int argc,char * argv[]) :
   #ifndef NO_AD_INITIALIZE
     sum_disc_numbers_obs.initialize();
   #endif
+  total_population_n.allocate(styr,endyr,"total_population_n");
+  fished_population_n.allocate(styr,endyr,"fished_population_n");
   imm_num_like.allocate("imm_num_like");
   #ifndef NO_AD_INITIALIZE
   imm_num_like.initialize();
@@ -463,6 +465,8 @@ void model_parameters::evaluate_the_objective_function(void)
   sum_mat_numbers_obs.initialize(); 
   pred_retained_n.initialize();
   pred_discard_n.initialize();
+  total_population_n.initialize();
+  fished_population_n.initialize();
   for (int year=styr;year<=endyr;year++)
    for (int size=1;size<=size_n;size++)
    {
@@ -472,6 +476,8 @@ void model_parameters::evaluate_the_objective_function(void)
 	sum_mat_numbers_obs(year) += mat_n_size_obs(year,size);
 	pred_retained_n(year)     += pred_retained_size_comp(year,size);
 	pred_discard_n(year)      += pred_discard_size_comp(year,size);
+	total_population_n(year)  += imm_n_size_pred(year,size)+mat_n_size_pred(year,size);
+	fished_population_n(year)  += retain_fish_sel(year,size)*imm_n_size_pred(year,size)+retain_fish_sel(year,size)*mat_n_size_pred(year,size);
 	   }
   // likelihoods
   imm_num_like = 0;
@@ -619,6 +625,16 @@ void model_parameters::report(const dvector& gradients)
   {
     report << (elem_prod(selectivity_mat(i),mat_n_size_pred(i)))/mat_numbers_pred(i)<<endl;
   }
+  report <<"$obs_imm_n_size" << endl;
+  for(int i=styr; i<=endyr; i++)
+  {
+    report << imm_n_size_obs(i)<<endl;
+  }
+  report <<"$obs_mat_n_size" << endl;
+  for(int i=styr; i<=endyr; i++)
+  {
+    report << mat_n_size_obs(i)<<endl;
+  }
   report<<"$styr"<<endl;
   report<<styr<<endl;
   report<<"$endyr"<<endl;
@@ -721,6 +737,14 @@ void model_parameters::report(const dvector& gradients)
   {
     report << (use_term_molt(i))<<endl;
   }
+  report <<"$sizes" << endl;
+  report << sizes << endl;	
+  report <<"$imm_cv" << endl;
+  report << sigma_numbers_imm << endl;	
+  report <<"$mat_cv" << endl;
+  report << sigma_numbers_mat << endl;	
+  report <<"$ret_cat_yrs" << endl;
+  report << ret_cat_yrs << endl;	 
     save_gradients(gradients);
 }
 

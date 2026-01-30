@@ -246,7 +246,7 @@ FUNCTION evaluate_the_objective_function
   // likelihoods
   num_like = 0;
   for (int year=styr;year<=endyr;year++)
-   if (year!=2020)
+   if (year!=2020 & year!=2024)
     num_like += square( log(numbers_pred(year)) - log(n_obs(year))) / (2.0 * square(sigma_numbers(year)));
 
    // likelihoods

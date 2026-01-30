@@ -138,7 +138,6 @@ model_parameters::model_parameters(int sz,int argc,char * argv[]) :
   fish_ret_sel_50_post.allocate(25,150,"fish_ret_sel_50_post");
   fish_ret_sel_slope.allocate(0.0001,20,"fish_ret_sel_slope");
   fish_ret_sel_slope_post.allocate(0.0001,20,"fish_ret_sel_slope_post");
-  fish_tot_sel_offset.allocate(1,ret_cat_size_yr_n,-40,40,"fish_tot_sel_offset");
   fish_tot_sel_slope.allocate(0.0001,20,"fish_tot_sel_slope");
   surv_q.allocate(0,1,est_sel,"surv_q");
   surv_slope.allocate(0.0001,20,est_sel,"surv_slope");
@@ -228,13 +227,7 @@ model_parameters::model_parameters(int sz,int argc,char * argv[]) :
     sum_mat_numbers_obs.initialize();
   #endif
   imm_numbers_pred.allocate(styr,endyr,"imm_numbers_pred");
-  #ifndef NO_AD_INITIALIZE
-    imm_numbers_pred.initialize();
-  #endif
   mat_numbers_pred.allocate(styr,endyr,"mat_numbers_pred");
-  #ifndef NO_AD_INITIALIZE
-    mat_numbers_pred.initialize();
-  #endif
   sum_ret_numbers_obs.allocate(styr,endyr,"sum_ret_numbers_obs");
   #ifndef NO_AD_INITIALIZE
     sum_ret_numbers_obs.initialize();
@@ -243,6 +236,8 @@ model_parameters::model_parameters(int sz,int argc,char * argv[]) :
   #ifndef NO_AD_INITIALIZE
     sum_tot_numbers_obs.initialize();
   #endif
+  total_population_n.allocate(styr,endyr,"total_population_n");
+  fished_population_n.allocate(styr,endyr,"fished_population_n");
   imm_num_like.allocate("imm_num_like");
   #ifndef NO_AD_INITIALIZE
   imm_num_like.initialize();
@@ -368,9 +363,9 @@ void model_parameters::userfunction(void)
 	if(year<=2004)
      retain_fish_sel(year,size) = 1 / (1+exp(-fish_ret_sel_slope*(sizes(size)-fish_ret_sel_50)));
    }	  
-  for(int year=1;year<=ret_cat_size_yr_n;year++)
-   for(int size=1;size<=size_n;size++)
-   	total_fish_sel(ret_cat_size_yrs(year),size) = 1 / (1+exp(-fish_tot_sel_slope*(sizes(size)-(fish_ret_sel_50-fish_tot_sel_offset(year))))) ; 
+ // for(int year=1;year<=ret_cat_size_yr_n;year++)
+   //for(int size=1;size<=size_n;size++)
+   	//total_fish_sel(ret_cat_size_yrs(year),size) = 1 / (1+exp(-fish_tot_sel_slope*(sizes(size)-(fish_ret_sel_50-fish_tot_sel_offset(year))))) ; 
   //nat_m_dev(2020) = 0;
   //nat_m_mat_dev(2020) = 0;
  for(int year=styr;year<=endyr;year++)
@@ -454,6 +449,8 @@ void model_parameters::evaluate_the_objective_function(void)
   sum_mat_numbers_obs.initialize(); 
   pred_retained_n.initialize();
   pred_tot_n.initialize();
+  total_population_n.initialize();
+  fished_population_n.initialize();
   for (int year=styr;year<=endyr;year++)
    for (int size=1;size<=size_n;size++)
    {
@@ -463,6 +460,8 @@ void model_parameters::evaluate_the_objective_function(void)
 	sum_mat_numbers_obs(year) += mat_n_size_obs(year,size);
 	pred_retained_n(year)     += pred_retained_size_comp(year,size);
 	pred_tot_n(year)     	  += pred_tot_size_comp(year,size);
+	total_population_n(year)  += imm_n_size_pred(year,size)+mat_n_size_pred(year,size);
+	fished_population_n(year)  += retain_fish_sel(year,size)*imm_n_size_pred(year,size)+retain_fish_sel(year,size)*mat_n_size_pred(year,size);
 	   }
   // likelihoods
   imm_num_like = 0;
@@ -607,6 +606,16 @@ void model_parameters::report(const dvector& gradients)
   {
     report << (elem_prod(selectivity_mat(i),mat_n_size_pred(i)))/mat_numbers_pred(i)<<endl;
   }
+  report <<"$obs_imm_n_size" << endl;
+  for(int i=styr; i<=endyr; i++)
+  {
+    report << imm_n_size_obs(i)<<endl;
+  }
+  report <<"$obs_mat_n_size" << endl;
+  for(int i=styr; i<=endyr; i++)
+  {
+    report << mat_n_size_obs(i)<<endl;
+  }
   report<<"$styr"<<endl;
   report<<styr<<endl;
   report<<"$endyr"<<endl;
@@ -706,6 +715,20 @@ void model_parameters::report(const dvector& gradients)
   {
     report << (use_term_molt(i))<<endl;
   }
+   report <<"$sizes" << endl;
+  report << sizes << endl;	 
+  report <<"$imm_cv" << endl;
+  report << sigma_numbers_imm << endl;	
+  report <<"$mat_cv" << endl;
+  report << sigma_numbers_mat << endl;	
+  report <<"$ret_cat_yrs" << endl;
+  report << ret_cat_yrs << endl;	
+  report <<"$tot_cat_yrs" << endl;
+  report << tot_cat_yrs << endl;	
+  report <<"$ret_cat_size_yrs" << endl;
+  report << ret_cat_size_yrs << endl;	
+  report <<"$tot_cat_size_yrs" << endl;
+  report << tot_cat_size_yrs << endl;	
     save_gradients(gradients);
 }
 

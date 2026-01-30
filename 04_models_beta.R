@@ -386,9 +386,16 @@ mod_mort_cap <- mod_mort %>%
   mutate(up_m = pmin(up_m, 1.5 * max(est_m, na.rm = TRUE))) %>% # The `pmin` function is used here to take the minimum of the two values element-wise, effectively capping the up_m values.
   ungroup()
 
+input<-as.data.frame(filter(unc_mort,Year<2023&Year!=2020))
+input <- input %>%
+  mutate(
+    Year = as.numeric(as.character(Year)),
+    est_m = as.numeric(as.character(est_m))
+  )
+
 mort_plot_alt_trans<-ggplot()+
-  geom_point(data=filter(unc_mort,Year<2023&Year!=2020),aes(x=Year,y=1-exp(-est_m)),col='darkgrey')+
-  geom_errorbar(data=filter(unc_mort,Year<2023&Year!=2020),aes(x=Year,ymin=1-exp(-dn_m),ymax=1-exp(-up_m)),col='grey')+
+  geom_point(data=input,aes(x=Year,y=1-exp(-est_m)),col='darkgrey')+
+  geom_errorbar(data=input,aes(x=Year,ymin=1-exp(-dn_m),ymax=1-exp(-up_m)),col='grey')+
   geom_ribbon(data=out_plot_m,aes(x=year,ymin=y_dn,ymax=y_up,fill=stock),alpha=0.3,lwd=2)+
   geom_line(data=out_plot_m,aes(x=year,y=preds,col=stock),lwd=1.15)+  theme_bw()+ylab("p(mortality)")+
   scale_color_manual(values=in_col2)+
@@ -438,7 +445,9 @@ png("plots/all_mort_all3.png",height=9,width=6,res=350,units='in')
 mort_plot_alt_trans +mort_plot_1 + plot_layout(nrow=2, design=design)
 dev.off()
 
-
+png("plots/all_mort_gam.png",height=8,width=8,res=350,units='in') 
+mort_plot + mort_plot_trm
+dev.off()
 
 #==================================
 # among pop cors
