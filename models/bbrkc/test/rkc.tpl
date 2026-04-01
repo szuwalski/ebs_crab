@@ -138,6 +138,12 @@ PARAMETER_SECTION
   vector temp_prop_rec(1,3)
   number tot_prop_rec
   
+   !!cout<<"fish_tot_sel_slope"<<fish_tot_sel_slope<<endl; 
+   !!cout<<"fish_ret_sel_slope"<<fish_ret_sel_slope<<endl;
+   !!cout<<"log_m_mu "<<log_m_mu<<endl;
+   !!cout<<"surv_sel_slope"<<surv_sel_slope<<endl;
+   !!cout<<"molt_sel_slope"<<molt_sel_slope<<endl;
+  
   objective_function_value f
   
  
@@ -146,6 +152,9 @@ PARAMETER_SECTION
 PROCEDURE_SECTION
  dvariable fpen=0.0;
 // initial year numbers at size and selectivity
+
+
+
  for(int size=1;size<=size_n;size++)
   {
    n_size_pred(styr,size) = exp(log_n_init(size));

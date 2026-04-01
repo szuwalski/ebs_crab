@@ -17,8 +17,8 @@ annotation_custom2 <-   function (grob, xmin = -Inf, xmax = Inf, ymin = -Inf,yma
 
 
 #==color coordinate the estimates with figure 1
-rep_files<-c("/models/snow/snow_down.rep",
-             "/models/tanner/tanner.rep")
+rep_files<-c("/models/snow/test/snow_down.rep",
+             "/models/tanner/test/tanner.rep")
 
 species<-c("Snow", "Tanner")
 outs_in<-list(list())
@@ -27,8 +27,8 @@ for(x in 1:length(rep_files))
   outs_in[[x]]<-readList(paste(getwd(),rep_files[x],sep=""))
 
 #==get uncertainty in M estimates
-cor_files<-c("/models/snow/snow_down.cor",
-             "/models/tanner/tanner.cor")
+cor_files<-c("/models/snow/test/snow_down.cor",
+             "/models/tanner/test/tanner.cor")
 keep_uncertainty_m_ch<-NULL
 
 labs<-c("imm","mat")
@@ -199,7 +199,7 @@ imm_abnd<-ggplot(data=ind_dat_imm)+
         panel.grid.minor = element_blank(),
         panel.border = element_blank(),
         panel.background = element_blank())+
-  facet_grid(~species,scales='free_y')+xlim(1970,2023)+
+  facet_grid(~species,scales='free_y')+xlim(1970,2025)+
   xlab("")+ guides(color="none")+ggtitle("IMMATURE")
 
 
@@ -235,7 +235,7 @@ mat_abnd<-ggplot(data=ind_dat_mat)+
         axis.text.y=element_blank(),
         axis.ticks.y=element_blank(),
         axis.title.y=element_blank(),axis.line.y=element_blank())+
-  facet_grid(~species,scales='free_y')+xlim(1970,2023)+
+  facet_grid(~species,scales='free_y')+xlim(1970,2025)+
   xlab("")+ guides(color="none")+ggtitle("MATURE")
 
 png("plots/fig_3.png",height=6,width=9,res=400,units='in')
@@ -271,17 +271,17 @@ for(x in 1:length(outs_in))
   all_dat<-rbind(all_dat,plot_dat)                
 }
 
-library(GGally)
-casted<-dcast(all_dat,Year~species+process,value.var="values")[,-1]
-my_fn <- function(data, mapping, ...){
-  p <- ggplot(data = data, mapping = mapping) + 
-    geom_point() + 
-    geom_smooth(method=loess, fill="red", color="red", ...) +
-    geom_smooth(method=lm, fill="blue", color="blue", ...)
-  p+theme_bw()
-}
-
-p1 = ggpairs(casted, lower = list(continuous = my_fn))
+# library(GGally)
+# casted<-dcast(all_dat,Year~species+process,value.var="values")[,-1]
+# my_fn <- function(data, mapping, ...){
+#   p <- ggplot(data = data, mapping = mapping) + 
+#     geom_point() + 
+#     geom_smooth(method=loess, fill="red", color="red", ...) +
+#     geom_smooth(method=lm, fill="blue", color="blue", ...)
+#   p+theme_bw()
+# }
+# 
+# p1 = ggpairs(casted, lower = list(continuous = my_fn))
 
 
 #============================================
@@ -309,27 +309,27 @@ png("plots/chion_srr.png",height=4,width=6,res=400,units='in')
 print(chion_srr)
 dev.off()
 
-# Correlation matrix plot
-p2 <- ggcorr(casted, label = TRUE, label_round = 2)
-g2 <- ggplotGrob(p2)
-colors <- g2$grobs[[6]]$children[[3]]$gp$fill
-
-# Change background color to tiles in the upper triangular matrix of plots 
-idx <- 1
-p<-ncol(casted)
-for (k1 in 1:(p-1)) {
-  for (k2 in (k1+1):p) {
-    plt <- getPlot(p1,k1,k2) +
-      theme(panel.background = element_rect(fill = colors[idx], color="white"),
-            panel.grid.major = element_line(color=colors[idx]))
-    p1 <- putPlot(p1,plt,k1,k2)
-    idx <- idx+1
-  }
-}
-
-png("plots/chion_cors.png",height=13,width=13,res=400,units='in')
-print(p1)
-dev.off()
+# # Correlation matrix plot
+# p2 <- ggcorr(casted, label = TRUE, label_round = 2)
+# g2 <- ggplotGrob(p2)
+# colors <- g2$grobs[[6]]$children[[3]]$gp$fill
+# 
+# # Change background color to tiles in the upper triangular matrix of plots 
+# idx <- 1
+# p<-ncol(casted)
+# for (k1 in 1:(p-1)) {
+#   for (k2 in (k1+1):p) {
+#     plt <- getPlot(p1,k1,k2) +
+#       theme(panel.background = element_rect(fill = colors[idx], color="white"),
+#             panel.grid.major = element_line(color=colors[idx]))
+#     p1 <- putPlot(p1,plt,k1,k2)
+#     idx <- idx+1
+#   }
+# }
+# 
+# png("plots/chion_cors.png",height=13,width=13,res=400,units='in')
+# print(p1)
+# dev.off()
 
 all_dat$species_process<-paste(all_dat$species,"_",substring(all_dat$process,1,1),sep="")
 out_dat<-rbind(all_dat_kc,all_dat)

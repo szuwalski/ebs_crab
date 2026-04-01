@@ -21,10 +21,10 @@ annotation_custom2 <-   function (grob, xmin = -Inf, xmax = Inf, ymin = -Inf,yma
 
 
 #==add PIBKC, PIRKC
-rep_files<-c("/models/bbrkc/rkc.rep",
-             "/models/pirkc/rkc.rep",
-             "/models/smbkc/bkc.rep",
-             "/models/pibkc/bkc.rep")
+rep_files<-c("/models/bbrkc/test/rkc.rep",
+             "/models/pirkc/test/rkc.rep",
+             "/models/smbkc/test/bkc.rep",
+             "/models/pibkc/test/bkc.rep")
 
 species<-c("BBRKC","PIRKC","SMBKC","PIBKC")
 maturity<-c(120,120,105,120)
@@ -34,10 +34,10 @@ for(x in 1:length(rep_files))
   outs_in[[x]]<-readList(paste(getwd(),rep_files[x],sep=""))
 
 #==get uncertainty in M estimates
-cor_files<-c("/models/bbrkc/rkc.cor",
-             "/models/pirkc/rkc.cor",
-             "/models/smbkc/bkc.cor",
-             "/models/pibkc/bkc.cor")
+cor_files<-c("/models/bbrkc/test/rkc.cor",
+             "/models/pirkc/test/rkc.cor",
+             "/models/smbkc/test/bkc.cor",
+             "/models/pibkc/test/bkc.cor")
 input_m<-c(-1.4997,-1.229,-1.6225,-1.6225)
 keep_uncertainty_m<-NULL
 keep_uncertainty_totn<-NULL
@@ -223,7 +223,7 @@ king_abnd<-ggplot(data=ind_dat)+
         panel.grid.minor = element_blank(),
         panel.border = element_blank(),
         panel.background = element_blank())+
-  facet_grid(~species,scales='free_y')+xlim(1970,2023)+
+  facet_grid(~species,scales='free_y')+xlim(1970,2025)+
   xlab("")+ guides(color="none")
 
 png("plots/fig_2.png",height=6,width=8,res=400,units='in')
@@ -278,7 +278,7 @@ dev.off()
 #   all_dat<-rbind(all_dat,plot_dat)                
 # }
 
-library(GGally)
+#library(GGally)
 all_dat$species_process<-paste(all_dat$species,"_",substring(all_dat$process,1,1),sep="")
 casted<-dcast(all_dat,Year~species_process,value.var="values")[,-1]
 my_fn <- function(data, mapping, ...){
@@ -289,38 +289,38 @@ my_fn <- function(data, mapping, ...){
   p+theme_bw()
 }
 
-p1 = ggpairs(casted, lower = list(continuous = my_fn))
+#p1 = ggpairs(casted, lower = list(continuous = my_fn))
 
 
 # Correlation matrix plot
-p2 <- ggcorr(casted, label = TRUE, label_round = 2)
-g2 <- ggplotGrob(p2)
-colors <- g2$grobs[[6]]$children[[3]]$gp$fill
-
-# Change background color to tiles in the upper triangular matrix of plots 
-idx <- 1
-p<-ncol(casted)
-for (k1 in 1:(p-1)) {
-  for (k2 in (k1+1):p) {
-    plt <- getPlot(p1,k1,k2) +
-      theme(panel.background = element_rect(fill = colors[idx], color="white"),
-            panel.grid.major = element_line(color=colors[idx]))
-    p1 <- putPlot(p1,plt,k1,k2)
-    idx <- idx+1
-  }
-}
-
-png("plots/rkc_cors.png",height=13,width=13,res=400,units='in')
-print(p1)
-dev.off()
+# p2 <- ggcorr(casted, label = TRUE, label_round = 2)
+# g2 <- ggplotGrob(p2)
+# colors <- g2$grobs[[6]]$children[[3]]$gp$fill
+# 
+# # Change background color to tiles in the upper triangular matrix of plots 
+# idx <- 1
+# p<-ncol(casted)
+# for (k1 in 1:(p-1)) {
+#   for (k2 in (k1+1):p) {
+#     plt <- getPlot(p1,k1,k2) +
+#       theme(panel.background = element_rect(fill = colors[idx], color="white"),
+#             panel.grid.major = element_line(color=colors[idx]))
+#     p1 <- putPlot(p1,plt,k1,k2)
+#     idx <- idx+1
+#   }
+# }
+# 
+# png("plots/rkc_cors.png",height=13,width=13,res=400,units='in')
+# print(p1)
+# dev.off()
 
 all_dat_kc<-all_dat
 
 filter(all_dat_kc,species=="PIBKC",process=="Abundance")
 
-casted<-dcast(filter(all_dat,process%in%c("Abundance","Recruitment",),Year~species_process,value.var="values"))
-p1<-ggpairs(casted[,-1])+ theme_grey(base_size = 8)
-p2 <- ggcorr(casted[,-1], label = TRUE)
+casted<-dcast(filter(all_dat,process%in%c("Abundance","Recruitment")),Year~species_process,value.var="values")
+#p1<-ggpairs(casted[,-1])+ theme_grey(base_size = 8)
+#p2 <- ggcorr(casted[,-1], label = TRUE)
 
 abund<-filter(all_dat,process%in%c("Abundance"))[,c(1,2,4)]
 colnames(abund)<-c("Abundance","Year","Species")
@@ -515,7 +515,7 @@ dev.off()
 #==plot catch data
 #=============================================
 #retained
-input<-paste(getwd(),"/models/",species[y],"/catch_dat.DAT",sep='')
+input<-paste(getwd(),"/models/",species[y],"/test/catch_dat.DAT",sep='')
 cat_dat<-readLines(input)
 ind<-grep("which years of retained",cat_dat)[1]
 indn<-grep("number of years of retained",cat_dat)[1]

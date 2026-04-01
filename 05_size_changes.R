@@ -18,13 +18,10 @@ for(x in 1:length(unq_st))
  norm_tot_n[indi,2:4]<- norm_tot_n[indi,2:4]/max(norm_tot_n[indi,2])
 }
 
-
-
-#==add PIBKC, PIRKC
-rep_files<-c("/models/bbrkc/rkc.rep",
-             "/models/pirkc/rkc.rep",
-             "/models/smbkc/bkc.rep",
-             "/models/pibkc/bkc.rep")
+rep_files<-c("/models/bbrkc/test/rkc.rep",
+             "/models/pirkc/test/rkc.rep",
+             "/models/smbkc/test/bkc.rep",
+             "/models/pibkc/test/bkc.rep")
 
 species<-c("BBRKC","PIRKC","SMBKC","PIBKC")
 outs_in<-list(list())
@@ -45,8 +42,8 @@ for(x in 1:length(rep_files))
   tot_abn<-rbind(tot_abn,tmp_df)
 }
                      
-rep_files<-c("/models/snow/snow_down.rep",
-             "/models/tanner/tanner.rep")
+rep_files<-c("/models/snow/test/snow_down.rep",
+             "/models/tanner/test/tanner.rep")
 species<-c("Snow","Tanner")
 outs_in<-list(list())
 for(x in 1:length(rep_files))
@@ -134,7 +131,7 @@ png("plots/rel_abn_prop_fish2.png",height=4,width=7,res=400,units='in')
 prop_fish + fished_n_rel
 dev.off()
 
-median(filter(tot_abn,year==2023)$norm_fish_n)
+median(filter(tot_abn,year==2025)$norm_fish_n)
 
 tot_abn2 <- tot_abn %>%
   dplyr::group_by(stock)%>%

@@ -6,18 +6,18 @@ library(ggridges)
 library(png)
 library(PBSmodelling)
 library(patchwork)
-library(mgcv)
 library(png)
 library(grid)
 library(DHARMa)
-library(itsadug)
-library(mgcViz)
-library(directlabels)
+library(ggplot2)
+#library(itsadug)
+#library(mgcViz)
+#library(directlabels)
 outs<-read.csv("data/all_output.csv")
-outs<-filter(outs,Year<2023)
+outs<-filter(outs,Year<2026)
 alt_met<-read.csv("data/alt_metrics_calc.csv")
 unc_mort<-read.csv("data/uncertainty_mort.csv")
-other_met<-read.csv("data/coldpool_ice.csv")
+other_met<-read.csv("data/ice_extent.csv")
 
 #======================================
 # full models:
@@ -67,23 +67,26 @@ mod_dat$lag_temp<-c(NA,mod_dat$Temperature[-length(mod_dat$Temperature)])
 #==p(mort)
 mod_dat_base<-mod_dat[,c(2,6,7,11,14,15)]
 mod_dat_base<-mod_dat_base[complete.cases(mod_dat_base),]
+
 base_mod_m<-gam(data=mod_dat_base,p_mort~1,family = betar(link = "logit"),weights=1/sd)
-mod_m<-gam(data=mod_dat,p_mort~s(Abundance,k=4)+s(Temperature,k=4)+s(Size,k=3)+s(ice,k=3),family = betar(link = "logit"),weights=1/sd)
+mod_m<-gam(data=mod_dat,p_mort~s(Abundance,k=4)+s(Temperature,k=4)+s(Size,k=3)+s(Ice,k=3),family = betar(link = "logit"),weights=1/sd)
+#mod_m<-gam(data=mod_dat,p_mort~s(Abundance,k=4)+s(Temperature,k=4)+s(Size,k=3),family = betar(link = "logit"),weights=1/sd)
+
 mod_m_a<-gam(data=mod_dat_base,p_mort~s(Abundance,k=4),family = betar(link = "logit"),weights=1/sd)
 mod_m_t<-gam(data=mod_dat_base,p_mort~s(Temperature,k=4),family = betar(link = "logit"),weights=1/sd)
 mod_m_s<-gam(data=mod_dat_base,p_mort~s(Size,k=3),family = betar(link = "logit"),weights=1/sd)
-mod_m_i<-gam(data=mod_dat_base,p_mort~s(ice,k=3),family = betar(link = "logit"),weights=1/sd)
+mod_m_i<-gam(data=mod_dat_base,p_mort~s(Ice,k=3),family = betar(link = "logit"),weights=1/sd)
 
 keep_conc[[conc_cnt]]<- concurvity(mod_m,full=FALSE)$observed[-1,-1]
    conc_cnt<-conc_cnt+1
 # gam.check(mod_m)
 # acf(resid(mod_m))
 # pacf(resid(mod_m))
-simout<-simulateResiduals(mod_m,n=250)
-
-png(paste("plots/dharma_m",use_stocks[y],".png",sep=''),height=6,width=8,res=350,units='in') 
-plot(simout)
-dev.off()
+# simout<-simulateResiduals(mod_m,n=250)
+# 
+# png(paste("plots/dharma_m",use_stocks[y],".png",sep=''),height=6,width=8,res=350,units='in') 
+# plot(simout)
+# dev.off()
 
 dev_expl_m<-c(dev_expl_m,round(summary(mod_m)$dev,2))
 keep_AIC_m<-rbind(keep_AIC_m,c(AIC(base_mod_m),AIC(mod_m)))
@@ -186,18 +189,20 @@ for(y in 1:length(use_stocks))
   mod_dat_base<-mod_dat[,c(6,7,8,12,14,15,16,17)]
   mod_dat_base<-mod_dat_base[complete.cases(mod_dat_base),]
   base_mod_m<-gam(data=mod_dat_base,p_mort_mat~1,family = betar(link = "logit"),weights=1/mat_sd)
-  mod_mat_m<-gam(data=mod_dat,p_mort_mat~s(Abundance,k=4)+s(Temperature,k=4)+s(Size,k=3)+s(ice,k=3),family = betar(link = "logit"),weights=1/mat_sd)
+  mod_mat_m<-gam(data=mod_dat,p_mort_mat~s(Abundance,k=4)+s(Temperature,k=4)+s(Size,k=3)+s(Ice,k=3),family = betar(link = "logit"),weights=1/mat_sd)
+  #mod_mat_m<-gam(data=mod_dat,p_mort_mat~s(Abundance,k=4)+s(Temperature,k=4)+s(Size,k=3),family = betar(link = "logit"),weights=1/mat_sd)
+
   mod_mat_a<-gam(data=mod_dat_base,p_mort_mat~s(Abundance,k=4),family = betar(link = "logit"),weights=1/mat_sd)
   mod_mat_t<-gam(data=mod_dat_base,p_mort_mat~s(Temperature,k=4),family = betar(link = "logit"),weights=1/mat_sd)
   mod_mat_s<-gam(data=mod_dat_base,p_mort_mat~s(Size,k=3),family = betar(link = "logit"),weights=1/mat_sd)
-  mod_mat_i<-gam(data=mod_dat_base,p_mort_mat~s(ice,k=3),family = betar(link = "logit"),weights=1/mat_sd)
+  mod_mat_i<-gam(data=mod_dat_base,p_mort_mat~s(Ice,k=3),family = betar(link = "logit"),weights=1/mat_sd)
 
-   simout<-simulateResiduals(mod_mat_m,n=250)
-  
-  png(paste("plots/dharma_m",use_stocks[y],"_mat.png",sep=''),height=6,width=8,res=350,units='in') 
-  plot(simout)
-  dev.off()
-  
+  #  simout<-simulateResiduals(mod_mat_m,n=250)
+  # 
+  # png(paste("plots/dharma_m",use_stocks[y],"_mat.png",sep=''),height=6,width=8,res=350,units='in') 
+  # plot(simout)
+  # dev.off()
+  # 
   keep_conc[[conc_cnt]]<- concurvity(mod_mat_m,full=FALSE)$observed[-1,-1]
   conc_cnt<-conc_cnt+1
   dev_expl_m<-c(dev_expl_m,round(summary(mod_mat_m)$dev,2))
@@ -230,19 +235,21 @@ for(y in 1:length(use_stocks))
   
   #==p(mort) imm
   base_mod_m<-gam(data=mod_dat_base,p_mort_imm~1,family = betar(link = "logit"),weights=1/imm_sd)
-  mod_imm_m<-gam(data=mod_dat,p_mort_imm~s(Abundance,k=4)+s(Temperature,k=4)+s(Size,k=3)+s(ice,k=3),family = betar(link = "logit"),weights=1/imm_sd)
+  mod_imm_m<-gam(data=mod_dat,p_mort_imm~s(Abundance,k=4)+s(Temperature,k=4)+s(Size,k=3)+s(Ice,k=3),family = betar(link = "logit"),weights=1/imm_sd)
+ # mod_imm_m<-gam(data=mod_dat,p_mort_imm~s(Abundance,k=4)+s(Temperature,k=4)+s(Size,k=3),family = betar(link = "logit"),weights=1/imm_sd)
+
   mod_imm_a<-gam(data=mod_dat_base,p_mort_imm~s(Abundance,k=4),family = betar(link = "logit"),weights=1/imm_sd)
   mod_imm_t<-gam(data=mod_dat_base,p_mort_imm~s(Temperature,k=4),family = betar(link = "logit"),weights=1/imm_sd)
   mod_imm_s<-gam(data=mod_dat_base,p_mort_imm~s(Size,k=3),family = betar(link = "logit"),weights=1/imm_sd)
-  mod_imm_i<-gam(data=mod_dat_base,p_mort_imm~s(ice,k=3),family = betar(link = "logit"),weights=1/imm_sd)
+  mod_imm_i<-gam(data=mod_dat_base,p_mort_imm~s(Ice,k=3),family = betar(link = "logit"),weights=1/imm_sd)
   
   keep_conc[[conc_cnt]]<- concurvity(mod_imm_m,full=FALSE)$observed[-1,-1]
   conc_cnt<-conc_cnt+1
-  simout<-simulateResiduals(mod_imm_m,n=250)
-  
-  png(paste("plots/dharma_m",use_stocks[y],"_imm.png",sep=''),height=6,width=8,res=350,units='in') 
-  plot(simout)
-  dev.off()
+  # simout<-simulateResiduals(mod_imm_m,n=250)
+  # 
+  # png(paste("plots/dharma_m",use_stocks[y],"_imm.png",sep=''),height=6,width=8,res=350,units='in') 
+  # plot(simout)
+  # dev.off()
   
   dev_expl_m<-c(dev_expl_m,round(summary(mod_imm_m)$dev,2))
   plotted<-plot(mod_imm_m,pages=1)
@@ -386,12 +393,22 @@ mod_mort_cap <- mod_mort %>%
   mutate(up_m = pmin(up_m, 1.5 * max(est_m, na.rm = TRUE))) %>% # The `pmin` function is used here to take the minimum of the two values element-wise, effectively capping the up_m values.
   ungroup()
 
-input<-as.data.frame(filter(unc_mort,Year<2023&Year!=2020))
+input<-as.data.frame(filter(unc_mort,Year<2026&Year!=2020))
 input <- input %>%
   mutate(
     Year = as.numeric(as.character(Year)),
     est_m = as.numeric(as.character(est_m))
   )
+
+input[input$stock=="Snow_mat",2]<-"Snow (mature)"
+input[input$stock=="Snow_imm",2]<-"Snow (immature)"
+input[input$stock=="Tanner_mat",2]<-"Tanner (mature)"
+input[input$stock=="Tanner_imm",2]<-"Tanner (immature)"
+
+out_plot_m[out_plot_m$stock=="Snow_mat",6]<-"Snow (mature)"
+out_plot_m[out_plot_m$stock=="Snow_imm",6]<-"Snow (immature)"
+out_plot_m[out_plot_m$stock=="Tanner_mat",6]<-"Tanner (mature)"
+out_plot_m[out_plot_m$stock=="Tanner_imm",6]<-"Tanner (immature)"
 
 mort_plot_alt_trans<-ggplot()+
   geom_point(data=input,aes(x=Year,y=1-exp(-est_m)),col='darkgrey')+
@@ -435,6 +452,21 @@ mort_plot_1<-ggplot(mort_term)+
   facet_wrap(~covar,scales='free',ncol=1)+
   scale_color_manual(values=in_col2)+
   scale_fill_manual(values=in_col2)
+mort_plot_2<-ggplot(mort_term)+
+  geom_line(aes(x=x,y=y,col=stock),lwd=1.25)+
+  geom_ribbon(aes(x=x,ymin=y_dn,ymax=y_up,fill=stock),alpha=0.2,lwd=2)+
+  theme_bw()+
+  theme(legend.position='none',
+        legend.background = element_blank(),
+        legend.box.background = element_blank(),
+        legend.key = element_blank(),
+        legend.title=element_blank(),
+        legend.text=element_text(size=8),
+        legend.key.size=unit(.7, 'lines'))+
+  geom_hline(yintercept=0,lty=2)+xlab("Observed value")+ylab("Smooth")+
+  facet_grid(stock~covar,scales='free')+
+  scale_color_manual(values=in_col2)+
+  scale_fill_manual(values=in_col2)
 
 # mortality <- density + temperature + competitor + size
 library(patchwork)
@@ -453,7 +485,7 @@ dev.off()
 # among pop cors
 #========================
 unique(outs$process)
-library(GGally)
+#library(GGally)
 library(forecast)
 #==by prGGally#==by process
 #==put ccf in upper triangle

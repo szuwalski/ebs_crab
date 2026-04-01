@@ -7,7 +7,7 @@ library(reshape2) # for melt
 library(mgcv)  
 library(PBSmapping)
 library(mapdata)    #some additional hires data
-library(maptools)   #useful tools such as reading shapefiles
+#library(maptools)   #useful tools such as reading shapefiles
 library(mapproj)
 library(ggplot2)
 library(patchwork)
@@ -172,8 +172,8 @@ catch_out<-ggplot(catch_plot)+
   scale_fill_manual(values=c("#0034c377","#0034c3","#ff5050","#ff505077","#3da550","#ff8f38"))
 dev.off()
 
-cat_val<-read.csv("data/FOSS_landings.csv")
-
+cat_val<-read.csv("data/FOSS_landings_2025.csv")
+cat_val$NMFS.Name[cat_val$NMFS.Name=="CRAB, SNOW/TANNER **"]<-"CRAB, SOUTHERN TANNER"
 val_out<-ggplot(cat_val)+
   geom_area(aes(x=Year,y=Dollars/10000000,fill=NMFS.Name),lwd=2)+
   theme_bw()+

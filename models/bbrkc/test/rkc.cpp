@@ -280,6 +280,11 @@ model_parameters::model_parameters(int sz,int argc,char * argv[]) :
   #ifndef NO_AD_INITIALIZE
   tot_prop_rec.initialize();
   #endif
+cout<<"fish_tot_sel_slope"<<fish_tot_sel_slope<<endl; 
+cout<<"fish_ret_sel_slope"<<fish_ret_sel_slope<<endl;
+cout<<"log_m_mu "<<log_m_mu<<endl;
+cout<<"surv_sel_slope"<<surv_sel_slope<<endl;
+cout<<"molt_sel_slope"<<molt_sel_slope<<endl;
   f.allocate("f");
   prior_function_value.allocate("prior_function_value");
   likelihood_function_value.allocate("likelihood_function_value");

@@ -124,9 +124,7 @@ mat_ind<-apply(use_mat_n,1,sum)
 #==need size transition matrix in here now too
 # insert code here
 # write.csv(size_trans,'models/ebs/data_files/size_trans.csv')
-size_trans<-read.csv("models/ebs/data_files/size_trans.csv",header=F)
-
-
+size_trans<-read.csv("models/snow/test/size_trans.csv",header=F)
 
 ##################################################################
 # write .DAT file
@@ -134,7 +132,7 @@ size_trans<-read.csv("models/ebs/data_files/size_trans.csv",header=F)
 #===============================================================
 
 # Specify output file
-outfile <- "models/ebs/data_files/snow_down.dat"
+outfile <- "models/snow/test/snow_down.dat"
 # Create an empty file (overwrite if exists)
 file.create(outfile)
 
@@ -212,7 +210,7 @@ write.table(
   quote = FALSE
 )
 
-emp_sel<-unlist(read.csv("models/ebs/data_files/empirical_selectivity.csv",header=F))
+emp_sel<-unlist(read.csv("models/snow/test/empirical_selectivity.csv",header=F))
 cat("# empirical selectivity", file = outfile, append = TRUE,"\n")
 cat(round(emp_sel,3), file = outfile, append = TRUE,"\n")
 
@@ -301,10 +299,11 @@ cat("\n# end of file\n", file = outfile, append = TRUE)
 #++++++++++++++++++++++++++++++++++++++++++++++++++
 
 # Specify output file
-outfile <- "models/ebs/data_files/snow_down.pin"
+outfile <- "models/snow/test/snow_down.pin"
 file.create(outfile)
 
 # Write header and values
+#==need to correct the number of devs for f mort by hand for now...fix this
 cat("# eastern Bering Sea snow crab pop dy model .pin file\n", file = outfile)
 cat(paste("# Generated on: ", Sys.Date()),"\n", file = outfile, append = TRUE)
 
@@ -343,7 +342,7 @@ cat(c(.1,.1), file = outfile, append = TRUE,"\n")
 cat("# log_f", file = outfile, append = TRUE,"\n")
 cat(0.13, file = outfile, append = TRUE,"\n")
 cat("# f_dev", file = outfile, append = TRUE,"\n")
-cat(rep(0,length(years)), file = outfile, append = TRUE,"\n")
+cat(rep(0,41), file = outfile, append = TRUE,"\n")
 cat("# fish_ret_sel_50", file = outfile, append = TRUE,"\n")
 cat(97, file = outfile, append = TRUE,"\n")
 cat("# fish_ret_sel_50_post", file = outfile, append = TRUE,"\n")
@@ -355,7 +354,7 @@ cat(0.29, file = outfile, append = TRUE,"\n")
 cat("# fish_tot_sel_offset", file = outfile, append = TRUE,"\n")
 cat(-9, file = outfile, append = TRUE,"\n")
 cat("# fisH_tot_sel_offset_dev", file = outfile, append = TRUE,"\n")
-cat(rep(0,length(years)), file = outfile, append = TRUE,"\n")
+cat(rep(0,41), file = outfile, append = TRUE,"\n")
 
 cat("# fish_tot_sel_slope", file = outfile, append = TRUE,"\n")
 cat(-1.6, file = outfile, append = TRUE,"\n")

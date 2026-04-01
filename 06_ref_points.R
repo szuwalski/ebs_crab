@@ -25,7 +25,7 @@ for(x in 1:length(unq_st))
 }
 
 #==add PIBKC, PIRKC
-rep_files<-c("/models/bbrkc/rkc.rep")
+rep_files<-c("/models/bbrkc/test/rkc.rep")
 maturity<-c(120)
 outs_in<-list(list())
 

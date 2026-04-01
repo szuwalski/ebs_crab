@@ -258,3 +258,13 @@ cat("# molt_sel_slope", file = outfile, append = TRUE,"\n")
 cat(0.55, file = outfile, append = TRUE,"\n")
 
 
+
+#####################################################
+# catch stuff now
+#####################################################
+
+cat_dat<-read.csv("models/bbrkc/test/total_catch.csv")
+tot_cat<-filter(cat_dat,group!="female"&target_stock=="BBRKC")%>%
+  group_by(crab_year)%>%
+  summarize(tot_n=sum(total_catch_n))
+write.csv(tot_cat,"models/bbrkc/test/obs_tot_cat_in.csv")

@@ -7,7 +7,7 @@
 # nat_q_dev 
 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
 # log_avg_rec 
-10 
+15 
 # rec_devs 
 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
 # sigma_m 
@@ -23,18 +23,18 @@
 # f_dev 
 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
 # fish_ret_sel_50 
-136 
+121 
 # fish_ret_sel_slope 
 0.56 
 # fish_tot_sel_50 
-107 
+116 
 # fish_tot_sel_slope 
-0.1379 
+0.08 
 # surv_sel_50 
-133 
+90 
 # surv_sel_slope 
 0.1 
-# molt_sel_50 
-165 
-# molt_sel_slope 
-0.1 
+# molt_sel_50:
+137.820833656
+# molt_sel_slope:
+0.142222382802
