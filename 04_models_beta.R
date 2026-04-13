@@ -79,14 +79,14 @@ mod_m_i<-gam(data=mod_dat_base,p_mort~s(Ice,k=3),family = betar(link = "logit"),
 
 keep_conc[[conc_cnt]]<- concurvity(mod_m,full=FALSE)$observed[-1,-1]
    conc_cnt<-conc_cnt+1
-# gam.check(mod_m)
-# acf(resid(mod_m))
-# pacf(resid(mod_m))
-# simout<-simulateResiduals(mod_m,n=250)
-# 
-# png(paste("plots/dharma_m",use_stocks[y],".png",sep=''),height=6,width=8,res=350,units='in') 
-# plot(simout)
-# dev.off()
+gam.check(mod_m)
+acf(resid(mod_m))
+pacf(resid(mod_m))
+simout<-simulateResiduals(mod_m,n=250)
+
+png(paste("plots/dharma_m",use_stocks[y],".png",sep=''),height=6,width=8,res=350,units='in')
+plot(simout)
+dev.off()
 
 dev_expl_m<-c(dev_expl_m,round(summary(mod_m)$dev,2))
 keep_AIC_m<-rbind(keep_AIC_m,c(AIC(base_mod_m),AIC(mod_m)))
@@ -118,8 +118,10 @@ for(x in 1:(length(plotted)))
 }
 
 }
-
+do_prib<-0
 #==do a Pribs model
+if(do_prib==1)
+{
 set1_rkc<-filter(outs,species%in%c("PIRKC"))[,-c(1,6)]
 set2_rkc<-filter(alt_met,stock%in%c("PIRKC"))[,-1]
 colnames(set2)[4]<-"species"
@@ -159,7 +161,7 @@ mod_dat$rkc_ssb<-mod_dat_rkc$`Spawner abundance`
 mod_m<-gam(data=mod_dat,Recruitment ~s(Abundance,k=3)+s(Temperature,k=3)+s(Size,k=3)+s(rkc_n,k=3),family=tw())
 summary(mod_m)
 plot(mod_m,pages=1)
-
+}
 #============================
 # chionoecetes species
 #============================
@@ -197,11 +199,11 @@ for(y in 1:length(use_stocks))
   mod_mat_s<-gam(data=mod_dat_base,p_mort_mat~s(Size,k=3),family = betar(link = "logit"),weights=1/mat_sd)
   mod_mat_i<-gam(data=mod_dat_base,p_mort_mat~s(Ice,k=3),family = betar(link = "logit"),weights=1/mat_sd)
 
-  #  simout<-simulateResiduals(mod_mat_m,n=250)
-  # 
-  # png(paste("plots/dharma_m",use_stocks[y],"_mat.png",sep=''),height=6,width=8,res=350,units='in') 
-  # plot(simout)
-  # dev.off()
+   simout<-simulateResiduals(mod_mat_m,n=250)
+
+  png(paste("plots/dharma_m",use_stocks[y],"_mat.png",sep=''),height=6,width=8,res=350,units='in')
+  plot(simout)
+  dev.off()
   # 
   keep_conc[[conc_cnt]]<- concurvity(mod_mat_m,full=FALSE)$observed[-1,-1]
   conc_cnt<-conc_cnt+1
@@ -245,11 +247,11 @@ for(y in 1:length(use_stocks))
   
   keep_conc[[conc_cnt]]<- concurvity(mod_imm_m,full=FALSE)$observed[-1,-1]
   conc_cnt<-conc_cnt+1
-  # simout<-simulateResiduals(mod_imm_m,n=250)
-  # 
-  # png(paste("plots/dharma_m",use_stocks[y],"_imm.png",sep=''),height=6,width=8,res=350,units='in') 
-  # plot(simout)
-  # dev.off()
+  simout<-simulateResiduals(mod_imm_m,n=250)
+
+  png(paste("plots/dharma_m",use_stocks[y],"_imm.png",sep=''),height=6,width=8,res=350,units='in')
+  plot(simout)
+  dev.off()
   
   dev_expl_m<-c(dev_expl_m,round(summary(mod_imm_m)$dev,2))
   plotted<-plot(mod_imm_m,pages=1)
@@ -477,15 +479,13 @@ png("plots/all_mort_all3.png",height=9,width=6,res=350,units='in')
 mort_plot_alt_trans +mort_plot_1 + plot_layout(nrow=2, design=design)
 dev.off()
 
-png("plots/all_mort_gam.png",height=8,width=8,res=350,units='in') 
-mort_plot + mort_plot_trm
-dev.off()
+
 
 #==================================
 # among pop cors
 #========================
 unique(outs$process)
-#library(GGally)
+library(GGally)
 library(forecast)
 #==by prGGally#==by process
 #==put ccf in upper triangle

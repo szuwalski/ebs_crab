@@ -365,9 +365,6 @@ bio_comp / f_comp | fishable_n
 dev.off()
 
 #==need 05_size_changes ran first
-png("plots/yield_curv5_stock.png",height=6,width=9,res=350,units='in') 
- prop_fish | fished_n_rel |bio_comp / f_comp 
-dev.off()
 png("plots/yield_curv6_stock.png",height=7,width=11,res=350,units='in') 
 prop_fish2 | fished_n_rel |bio_comp / f_comp 
 dev.off()

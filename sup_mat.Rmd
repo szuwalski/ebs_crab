@@ -30,7 +30,7 @@ library(maps)
 library(lattice)
 library(PBSmapping)
 library(mapdata)    #some additional hires data
-library(maptools)   #useful tools such as reading shapefiles
+#library(maptools)   #useful tools such as reading shapefiles
 library(mapproj)
 library(plotrix)
 
