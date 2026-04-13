@@ -20,15 +20,17 @@ library(directlabels)
 
 #==read in parameters/model output/covariates
 outs<-readList("models/bbrkc/test/rkc.rep")
+#outs<-readList("models/smbkc/test/bkc.rep")
 all_output<-read.csv("data/all_output.csv")
 alt_metrics_calc<-read.csv("data/alt_metrics_calc.csv")
 unc_mort<-read.csv("data/uncertainty_mort.csv")
 unique(all_output$process)
-#==fit relationships between process and covariates
 
-m_dat<-filter(unc_mort,stock=='BBRKC')
-alt_d<-filter(alt_metrics_calc,stock=='BBRKC')
-dens<-filter(all_output,species=="BBRKC"&process=="Abundance")
+#==fit relationships between process and covariates
+use_species<-"BBRKC"
+m_dat<-filter(unc_mort,stock==use_species)
+alt_d<-filter(alt_metrics_calc,stock==use_species)
+dens<-filter(all_output,species==use_species&process=="Abundance")
 colnames(dens)[2]<-"Abund"
 gam_dat<-merge(m_dat,alt_d,by='Year')
 gam_dat<-merge(gam_dat,dens,by='Year')
